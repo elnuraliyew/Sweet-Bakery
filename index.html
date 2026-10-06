@@ -1,43 +1,178 @@
 <!DOCTYPE html>
 <html lang="az">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sweet Bakery – Ana Səhifə</title>
-    <link rel="stylesheet" href="styles.css" />
-    <!-- Firebase SDKs -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
-    <script defer src="app.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sweet Bakery — Şirin Xəyallarınızın Dadı | Premium Tortlar</title>
+  <meta name="description" content="Sweet Bakery ilə xüsusi günləriniz üçün zərif, dadlı və təbii inqrediyentlərlə hazırlanan lüks tort sifarişi." />
+  <link rel="stylesheet" href="styles.css" />
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script defer src="app.js"></script>
 </head>
 <body>
-    <!-- Hero Section -->
-    <header class="hero-card">
-        <h1>Sweet Bakery - Şirin xəyallarınızın dadı</h1>
-        <p>Ən xüsusi tortlar, sevgi ilə hazırlanır.</p>
-        <div style="margin-top: 1rem; display: flex; gap: 10px; justify-content: center;">
-            <a href="admin.html" style="color: var(--accent-rose); font-weight: bold; text-decoration: underline;">Admin Paneli</a>
-            <button id="logoutBtn" style="width: auto; padding: 0.4rem 1rem;">Çıxış et</button>
+
+  <!-- Background Decorative Ambient Blobs -->
+  <div class="bg-blobs">
+    <div class="blob-1"></div>
+    <div class="blob-2"></div>
+  </div>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand-logo">
+        <div class="logo-icon">🍰</div>
+        <span>Sweet Bakery</span>
+      </a>
+      
+      <div class="nav-links">
+        <a href="#catalogue">Tortlarımız</a>
+        <a href="#about">Haqqımızda</a>
+        <a href="#contact">Əlaqə</a>
+        <a href="admin.html" class="btn-outline">
+          <i class="fa-solid fa-lock"></i> Admin Paneli
+        </a>
+        <a href="tel:+994501234567" class="btn-contact">
+          <i class="fa-solid fa-phone"></i> Zəng Et
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="hero-section">
+    <div class="hero-content">
+      <span class="badge">Eksklüziv Şirniyyat Evi</span>
+      <h1>Şirin xəyallarınızın <span>ən zərif</span> dadı</h1>
+      <p>Hər bir tortumuz xüsusi reseptlə, 100% təbii kərə yağı və Belçika şokoladı ilə əl işi olaraq hazırlanır. Özəl günlərinizə unudulmaz şirinlik bəxş edin.</p>
+      
+      <div class="hero-cta-group">
+        <a href="#catalogue" class="btn-contact" style="padding: 0.85rem 2rem; font-size: 1rem;">
+          Kataloqa Bax <i class="fa-solid fa-arrow-right"></i>
+        </a>
+        <a href="https://instagram.com" target="_blank" class="btn-outline" style="padding: 0.85rem 1.8rem; font-size: 1rem;">
+          <i class="fa-brands fa-instagram"></i> Instagram
+        </a>
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="hero-visual-card">
+        <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=1200&q=80" alt="Zərif Lüks Tort" id="heroImg" />
+      </div>
+      <div class="hero-floating-badge">
+        <div class="badge-icon">✨</div>
+        <div>
+          <h4>100% Təbii və Təzə</h4>
+          <p>Gündəlik sifarişlə xüsusi hazırlanır</p>
         </div>
-    </header>
+      </div>
+    </div>
+  </header>
 
-    <!-- Category Buttons -->
-    <nav class="categories" id="categoryContainer">
-        <!-- Buttons will be injected by app.js -->
-    </nav>
+  <!-- Features Strip -->
+  <section class="features-strip" id="about">
+    <div class="features-container">
+      <div class="feature-item">
+        <div class="feature-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+        <div class="feature-text">
+          <h4>Fərdi Dizayn</h4>
+          <p>İstədiyiniz rəng, forma və mövzuda unikal tortlar.</p>
+        </div>
+      </div>
 
-    <!-- Product Gallery -->
-    <section class="products" id="productContainer">
-        <!-- Product cards will be injected by app.js -->
-    </section>
+      <div class="feature-item">
+        <div class="feature-icon"><i class="fa-solid fa-leaf"></i></div>
+        <div class="feature-text">
+          <h4>Premium İnqrediyentlər</h4>
+          <p>Heç bir süni qatqı yoxdur, yalnız təmiz Belçika şokoladı.</p>
+        </div>
+      </div>
 
-    <!-- Footer -->
-    <footer>
-        <p>Sifariş və suallarınız üçün bizimlə əlaqə saxlayın</p>
-        <a href="https://instagram.com/sweetbakery" target="_blank">Instagram</a>
-        <a href="tel:+1234567890">+1 234 567 890</a>
-    </footer>
+      <div class="feature-item">
+        <div class="feature-icon"><i class="fa-solid fa-truck-fast"></i></div>
+        <div class="feature-text">
+          <h4>Təhlükəsiz Çatdırılma</h4>
+          <p>Xüsusi soyuduculu qutularda qapınıza qədər.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Catalogue Section -->
+  <main class="catalogue-section" id="catalogue">
+    <div class="section-head">
+      <span class="subtitle">Eksklüziv Kolleksiya</span>
+      <h2>Tort Kataloqumuz</h2>
+    </div>
+
+    <!-- Category Pills Filter -->
+    <div class="category-filter-wrap" id="categoryContainer">
+      <button class="category-pill active" data-category="all">Bütün Tortlar</button>
+      <!-- Dynamic Categories injected here -->
+    </div>
+
+    <!-- Products Grid -->
+    <div class="product-grid" id="productContainer">
+      <!-- Loading Skeleton or Dynamic Cards injected here -->
+      <div class="empty-state">
+        <p><i class="fa-solid fa-spinner fa-spin"></i> Tortlar yüklənir...</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="luxury-footer" id="contact">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <div class="brand-logo" style="margin-bottom: 1rem;">
+          <div class="logo-icon" style="background: rgba(255,255,255,0.1); color: #fff;">🍰</div>
+          <span style="color: #fff; font-size: 1.6rem;">Sweet Bakery</span>
+        </div>
+        <p>Bakının ən incə zövqlü şirniyyat brendi. Hər bir sifariş üçün sevgi və peşəkarlıqla zənginləşdirilmiş sənət əsərləri yaradırıq.</p>
+      </div>
+
+      <div class="footer-block">
+        <h4>Naviqasiya</h4>
+        <div class="footer-contacts" style="display: flex; flex-direction: column;">
+          <a href="#catalogue"><i class="fa-solid fa-angle-right"></i> Tort Kataloqu</a>
+          <a href="#about"><i class="fa-solid fa-angle-right"></i> Niyə Biz?</a>
+          <a href="admin.html"><i class="fa-solid fa-angle-right"></i> İdarəetmə Paneli</a>
+        </div>
+      </div>
+
+      <div class="footer-block">
+        <h4>Sifariş və Əlaqə</h4>
+        <div class="footer-contacts">
+          <a href="tel:+994501234567">
+            <i class="fa-solid fa-phone"></i> +994 50 123 45 67
+          </a>
+          <a href="https://wa.me/994501234567" target="_blank">
+            <i class="fa-brands fa-whatsapp"></i> WhatsApp ilə Sifariş
+          </a>
+          <a href="https://instagram.com" target="_blank">
+            <i class="fa-brands fa-instagram"></i> @sweetbakery.az
+          </a>
+          <a href="#">
+            <i class="fa-solid fa-location-dot"></i> Bakı şəhəri, Nizami küç. 42
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <p>© 2026 Sweet Bakery. Bütün hüquqlar qorunur.</p>
+      <a href="admin.html"><i class="fa-solid fa-shield-halved"></i> Admin Girişi</a>
+    </div>
+  </footer>
+
 </body>
 </html>

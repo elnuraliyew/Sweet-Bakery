@@ -1,231 +1,321 @@
-// admin.js - Sweet Bakery Admin İdarəetmə Paneli
+// admin.js - Sweet Bakery Professional Admin Dashboard Məntiqi
 
-function showMessage(msg, isError = false) {
-    const el = document.createElement('div');
-    el.textContent = msg;
-    el.style.position = 'fixed';
-    el.style.bottom = '20px';
-    el.style.left = '50%';
-    el.style.transform = 'translateX(-50%)';
-    el.style.background = isError ? '#d9534f' : '#5cb85c';
-    el.style.color = '#fff';
-    el.style.padding = '0.75rem 1.5rem';
-    el.style.borderRadius = '8px';
-    el.style.zIndex = 9999;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 3000);
+let adminProducts = [];
+let adminCategories = [];
+
+// Bildiriş (Toast) Mesajı Funksiyası
+function notify(text, isError = false) {
+  const toast = document.createElement('div');
+  toast.innerHTML = `<i class="fa-solid ${isError ? 'fa-triangle-exclamation' : 'fa-circle-check'}"></i> ${text}`;
+  toast.style.cssText = `
+    position: fixed;
+    top: 25px;
+    right: 25px;
+    background: ${isError ? '#c5221f' : '#137333'};
+    color: #fff;
+    padding: 1rem 1.6rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    animation: fadeIn 0.3s ease;
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
 }
 
-// Giriş qoruması (Auth check)
-firebase.auth().onAuthStateChanged(user => {
-    if (!user) {
-        window.location.href = 'login.html';
-        return;
-    }
-    initAdmin();
+// 1. Auth Status Yoxlanışı (Giriş etməyibsə modal çıxır)
+auth.onAuthStateChanged(user => {
+  const loginModal = document.getElementById('loginModal');
+  const adminDashboard = document.getElementById('adminDashboard');
+  const userBadge = document.getElementById('userBadge');
+
+  if (user) {
+    if (loginModal) loginModal.style.display = 'none';
+    if (adminDashboard) adminDashboard.style.display = 'flex';
+    if (userBadge) userBadge.innerHTML = `<i class="fa-regular fa-user"></i> ${user.email}`;
+    initAdminData();
+  } else {
+    if (loginModal) loginModal.style.display = 'flex';
+    if (adminDashboard) adminDashboard.style.display = 'none';
+  }
 });
 
-let allCategories = [];
-let allProducts = [];
+// 2. Giriş Formu
+const loginForm = document.getElementById('adminLoginForm');
+if (loginForm) {
+  loginForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = document.getElementById('adminEmail').value.trim();
+    const pass = document.getElementById('adminPassword').value;
+    const errDiv = document.getElementById('loginError');
 
-function initAdmin() {
-    loadCategories();
-    loadProducts();
+    try {
+      errDiv.textContent = '';
+      await auth.signInWithEmailAndPassword(email, pass);
+      notify('Uğurla daxil oldunuz!');
+    } catch (err) {
+      console.error(err);
+      errDiv.textContent = 'Giriş uğursuz oldu: E-poçt və ya şifrə yanlışdır.';
+    }
+  });
+}
 
-    document.getElementById('addCategoryBtn').addEventListener('click', addCategory);
-    document.getElementById('saveProductBtn').addEventListener('click', saveProduct);
-    document.getElementById('cancelEditBtn').addEventListener('click', cancelEdit);
-    
-    document.getElementById('logoutBtn').addEventListener('click', async () => {
-        await firebase.auth().signOut();
-        window.location.href = 'login.html';
+// 3. Çıxış Düyməsi
+const logoutBtn = document.getElementById('logoutBtn');
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', async () => {
+    await auth.signOut();
+    notify('Sistemdən çıxış edildi.');
+  });
+}
+
+// 4. İlkin Məlumatların Yüklənməsi
+async function initAdminData() {
+  await fetchCategories();
+  await fetchProducts();
+  setupEventListeners();
+}
+
+function setupEventListeners() {
+  // Tort Formu Submit
+  const prodForm = document.getElementById('productForm');
+  if (prodForm) {
+    prodForm.addEventListener('submit', handleProductSubmit);
+  }
+
+  // Redaktəni Ləğv Et
+  const cancelBtn = document.getElementById('cancelProdEditBtn');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', resetProductForm);
+  }
+
+  // Kateqoriya Formu Submit
+  const catForm = document.getElementById('categoryForm');
+  if (catForm) {
+    catForm.addEventListener('submit', handleCategorySubmit);
+  }
+}
+
+// 5. Kateqoriyaları Gətir & Render Et
+async function fetchCategories() {
+  try {
+    const snap = await db.collection('categories').get();
+    adminCategories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    // Sayğacı yenilə
+    document.getElementById('totalCategoriesCount').textContent = adminCategories.length;
+
+    // Select menyunu doldur
+    const select = document.getElementById('prodCategory');
+    select.innerHTML = '<option value="">Kateqoriya seçin...</option>';
+
+    // Cədvəli doldur
+    const tableBody = document.getElementById('categoriesTableBody');
+    tableBody.innerHTML = '';
+
+    if (adminCategories.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#888;">Hələ heç bir kateqoriya yaradılmayıb.</td></tr>';
+    }
+
+    adminCategories.forEach(cat => {
+      // Option
+      const opt = document.createElement('option');
+      opt.value = cat.id;
+      opt.textContent = cat.name;
+      select.appendChild(opt);
+
+      // Row
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight: 600;">${cat.name}</td>
+        <td style="text-align: right;">
+          <button class="action-btn action-delete" onclick="deleteCategory('${cat.id}')">
+            <i class="fa-solid fa-trash"></i> Sil
+          </button>
+        </td>
+      `;
+      tableBody.appendChild(tr);
     });
+
+  } catch (err) {
+    console.error(err);
+    notify('Kateqoriyaları yükləyərkən xəta baş verdi', true);
+  }
 }
 
-// Kateqoriyaları yüklə
-async function loadCategories() {
-    try {
-        const snap = await firebase.firestore().collection('categories').get();
-        allCategories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        // Siyahını render et
-        const list = document.getElementById('categoryList');
-        list.innerHTML = '';
-        
-        // Select menyusunu yenilə
-        const select = document.getElementById('prodCategory');
-        select.innerHTML = '<option value="">Kateqoriya seçin</option>';
+// 6. Kateqoriya Əlavə Et
+async function handleCategorySubmit(e) {
+  e.preventDefault();
+  const input = document.getElementById('newCatName');
+  const name = input.value.trim();
 
-        allCategories.forEach(cat => {
-            // Siyahı elementi
-            const li = document.createElement('li');
-            li.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 0.5rem; background: rgba(255,255,255,0.25); border-radius: 8px; margin-bottom: 0.5rem;';
-            li.innerHTML = `
-                <span><strong>${cat.name}</strong></span>
-                <button onclick="deleteCategory('${cat.id}')" style="width: auto; background: #d9534f; padding: 0.25rem 0.75rem; font-size: 0.85rem;">Sil</button>
-            `;
-            list.appendChild(li);
+  if (!name) return;
 
-            // Select option
-            const opt = document.createElement('option');
-            opt.value = cat.id;
-            opt.textContent = cat.name;
-            select.appendChild(opt);
-        });
-    } catch (err) {
-        console.error(err);
-        showMessage('Kateqoriyalar yüklənmədi', true);
-    }
+  try {
+    await db.collection('categories').add({ name, createdAt: new Date() });
+    notify(`"${name}" kateqoriyası yaradıldı!`);
+    input.value = '';
+    await fetchCategories();
+  } catch (err) {
+    console.error(err);
+    notify(err.message, true);
+  }
 }
 
-// Kateqoriya əlavə et
-async function addCategory() {
-    const input = document.getElementById('newCatName');
-    const name = input.value.trim();
-    if (!name) {
-        showMessage('Kateqoriya adını daxil edin!', true);
-        return;
-    }
-    try {
-        await firebase.firestore().collection('categories').add({ name });
-        input.value = '';
-        showMessage('Kateqoriya uğurla əlavə edildi!');
-        loadCategories();
-    } catch (err) {
-        console.error(err);
-        showMessage(err.message, true);
-    }
-}
-
-// Kateqoriya sil
+// 7. Kateqoriyanı Sil
 window.deleteCategory = async function(id) {
-    if (!confirm('Bu kateqoriyanı silmək istədiyinizdən əminsiniz?')) return;
-    try {
-        await firebase.firestore().collection('categories').doc(id).delete();
-        showMessage('Kateqoriya silindi');
-        loadCategories();
-    } catch (err) {
-        console.error(err);
-        showMessage(err.message, true);
-    }
+  if (!confirm('Bu kateqoriyanı silmək istəyirsiniz?')) return;
+  try {
+    await db.collection('categories').doc(id).delete();
+    notify('Kateqoriya silindi.');
+    await fetchCategories();
+    await fetchProducts();
+  } catch (err) {
+    console.error(err);
+    notify(err.message, true);
+  }
 };
 
-// Tortları yüklə
-async function loadProducts() {
-    try {
-        const snap = await firebase.firestore().collection('products').get();
-        allProducts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        
-        const list = document.getElementById('productList');
-        list.innerHTML = '';
+// 8. Tortları Gətir & Render Et
+async function fetchProducts() {
+  try {
+    const snap = await db.collection('products').get();
+    adminProducts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-        allProducts.forEach(prod => {
-            const cat = allCategories.find(c => c.id === prod.categoryId);
-            const catName = cat ? cat.name : 'Kateqoriyasız';
+    // Sayğacı yenilə
+    document.getElementById('totalProductsCount').textContent = adminProducts.length;
 
-            const card = document.createElement('div');
-            card.style.cssText = 'background: rgba(255,255,255,0.25); border-radius: 10px; padding: 1rem; text-align: left;';
-            card.innerHTML = `
-                <img src="${prod.imageUrl}" alt="${prod.name}" style="width: 100%; height: 140px; object-fit: cover; border-radius: 8px; margin-bottom: 0.5rem;" onerror="this.src='https://via.placeholder.com/300x200?text=Tort+Şəkli'" />
-                <h4 style="color: var(--accent-rose); margin-bottom: 0.25rem;">${prod.name}</h4>
-                <p style="font-size: 0.85rem; margin-bottom: 0.25rem;"><strong>Tərkib:</strong> ${prod.description}</p>
-                <p style="font-size: 0.85rem; margin-bottom: 0.25rem;"><strong>Kateqoriya:</strong> ${catName}</p>
-                <p style="font-weight: bold; margin-bottom: 0.75rem;">Qiymət: ${prod.price} AZN</p>
-                <div style="display: flex; gap: 8px;">
-                    <button onclick="startEditProduct('${prod.id}')" style="background: #2b7a78; font-size: 0.85rem; padding: 0.4rem;">Redaktə et</button>
-                    <button onclick="deleteProduct('${prod.id}')" style="background: #d9534f; font-size: 0.85rem; padding: 0.4rem;">Sil</button>
-                </div>
-            `;
-            list.appendChild(card);
-        });
-    } catch (err) {
-        console.error(err);
-        showMessage('Tortlar yüklənmədi', true);
+    const tableBody = document.getElementById('productsTableBody');
+    tableBody.innerHTML = '';
+
+    if (adminProducts.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888; padding: 2rem;">Kataloqda hələ tort yoxdur. Yuxarıdakı formadan əlavə edin.</td></tr>';
+      return;
     }
+
+    adminProducts.forEach(prod => {
+      const cat = adminCategories.find(c => c.id === prod.categoryId);
+      const catName = cat ? cat.name : 'Təyin edilməyib';
+
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <img src="${prod.imageUrl}" class="table-img" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=100&q=80'" />
+        </td>
+        <td style="font-weight: 700; color: var(--choco-dark);">${prod.name}</td>
+        <td><span style="background: var(--soft-rose); color: var(--dusty-rose); padding: 0.25rem 0.7rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600;">${catName}</span></td>
+        <td style="font-weight: 700; color: var(--dusty-rose);">${prod.price} AZN</td>
+        <td style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--choco-muted); font-size: 0.85rem;">${prod.description}</td>
+        <td style="text-align: right; white-space: nowrap;">
+          <button class="action-btn action-edit" onclick="startEditProduct('${prod.id}')">
+            <i class="fa-solid fa-pen-to-square"></i> Redaktə
+          </button>
+          <button class="action-btn action-delete" onclick="deleteProduct('${prod.id}')">
+            <i class="fa-solid fa-trash"></i> Sil
+          </button>
+        </td>
+      `;
+      tableBody.appendChild(tr);
+    });
+
+  } catch (err) {
+    console.error(err);
+    notify('Məhsullar yüklənərkən xəta baş verdi', true);
+  }
 }
 
-// Tort əlavə et və ya yenilə
-async function saveProduct() {
-    const editId = document.getElementById('editProductId').value;
-    const name = document.getElementById('prodName').value.trim();
-    const desc = document.getElementById('prodDesc').value.trim();
-    const price = Number(document.getElementById('prodPrice').value);
-    const img = document.getElementById('prodImg').value.trim();
-    const catId = document.getElementById('prodCategory').value;
+// 9. Tort Əlavə Et və ya Yenilə (Create / Update)
+async function handleProductSubmit(e) {
+  e.preventDefault();
 
-    if (!name || !desc || !price || !img || !catId) {
-        showMessage('Zəhmət olmasa bütün sahələri doldurun!', true);
-        return;
+  const editId = document.getElementById('editProdId').value;
+  const name = document.getElementById('prodName').value.trim();
+  const price = Number(document.getElementById('prodPrice').value);
+  const categoryId = document.getElementById('prodCategory').value;
+  const imageUrl = document.getElementById('prodImageUrl').value.trim();
+  const description = document.getElementById('prodDesc').value.trim();
+
+  const productData = {
+    name,
+    price,
+    categoryId,
+    imageUrl,
+    description,
+    updatedAt: new Date()
+  };
+
+  try {
+    if (editId) {
+      await db.collection('products').doc(editId).update(productData);
+      notify(`"${name}" uğurla yeniləndi!`);
+    } else {
+      productData.createdAt = new Date();
+      await db.collection('products').add(productData);
+      notify(`"${name}" tortu kataloqa əlavə edildi!`);
     }
 
-    const prodData = {
-        name,
-        description: desc,
-        price,
-        imageUrl: img,
-        categoryId: catId
-    };
+    resetProductForm();
+    await fetchProducts();
 
-    try {
-        if (editId) {
-            // Redaktə
-            await firebase.firestore().collection('products').doc(editId).update(prodData);
-            showMessage('Tort məlumatları yeniləndi!');
-        } else {
-            // Yeni əlavə
-            await firebase.firestore().collection('products').add(prodData);
-            showMessage('Yeni tort uğurla əlavə edildi!');
-        }
-        cancelEdit();
-        loadProducts();
-    } catch (err) {
-        console.error(err);
-        showMessage(err.message, true);
-    }
+  } catch (err) {
+    console.error(err);
+    notify(err.message, true);
+  }
 }
 
-// Redaktə rejiminə keçid
+// 10. Tort Redaktəsinə Başla
 window.startEditProduct = function(id) {
-    const prod = allProducts.find(p => p.id === id);
-    if (!prod) return;
+  const prod = adminProducts.find(p => p.id === id);
+  if (!prod) return;
 
-    document.getElementById('formTitle').textContent = 'Tortu Redaktə Et';
-    document.getElementById('editProductId').value = prod.id;
-    document.getElementById('prodName').value = prod.name;
-    document.getElementById('prodDesc').value = prod.description;
-    document.getElementById('prodPrice').value = prod.price;
-    document.getElementById('prodImg').value = prod.imageUrl;
-    document.getElementById('prodCategory').value = prod.categoryId;
+  document.getElementById('editProdId').value = prod.id;
+  document.getElementById('prodName').value = prod.name;
+  document.getElementById('prodPrice').value = prod.price;
+  document.getElementById('prodCategory').value = prod.categoryId;
+  document.getElementById('prodImageUrl').value = prod.imageUrl;
+  document.getElementById('prodDesc').value = prod.description;
 
-    document.getElementById('saveProductBtn').textContent = 'Yenilə';
-    document.getElementById('cancelEditBtn').style.display = 'inline-block';
+  document.getElementById('productFormTitle').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Tortu Redaktə Et';
+  document.getElementById('submitProdBtn').innerHTML = '<i class="fa-solid fa-check"></i> Yenilə';
+  document.getElementById('cancelProdEditBtn').style.display = 'inline-block';
 
-    window.scrollTo({ top: document.getElementById('productSection').offsetTop - 20, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// Redaktəni ləğv et
-function cancelEdit() {
-    document.getElementById('formTitle').textContent = 'Yeni Tort Əlavə Et';
-    document.getElementById('editProductId').value = '';
-    document.getElementById('prodName').value = '';
-    document.getElementById('prodDesc').value = '';
-    document.getElementById('prodPrice').value = '';
-    document.getElementById('prodImg').value = '';
-    document.getElementById('prodCategory').value = '';
-
-    document.getElementById('saveProductBtn').textContent = 'Tortu Yadda Saxla';
-    document.getElementById('cancelEditBtn').style.display = 'none';
+// 11. Redaktəni Ləğv Et
+function resetProductForm() {
+  document.getElementById('editProdId').value = '';
+  document.getElementById('productForm').reset();
+  document.getElementById('productFormTitle').innerHTML = '<i class="fa-solid fa-circle-plus"></i> Yeni Tort Əlavə Et';
+  document.getElementById('submitProdBtn').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Yadda Saxla';
+  document.getElementById('cancelProdEditBtn').style.display = 'none';
 }
 
-// Tortu sil
+// 12. Tortu Sil
 window.deleteProduct = async function(id) {
-    if (!confirm('Bu tortu silmək istədiyinizdən əminsiniz?')) return;
-    try {
-        await firebase.firestore().collection('products').doc(id).delete();
-        showMessage('Tort silindi!');
-        loadProducts();
-    } catch (err) {
-        console.error(err);
-        showMessage(err.message, true);
-    }
+  if (!confirm('Bu tortu birdəfəlik silmək istədiyinizdən əminsiniz?')) return;
+  try {
+    await db.collection('products').doc(id).delete();
+    notify('Tort kataloqdan silindi.');
+    await fetchProducts();
+  } catch (err) {
+    console.error(err);
+    notify(err.message, true);
+  }
+};
+
+// 13. Tab Keçidləri (Tortlar <-> Kateqoriyalar)
+window.switchTab = function(tabId) {
+  document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
+  document.getElementById(tabId).style.display = 'block';
+
+  document.querySelectorAll('.admin-nav-item').forEach(btn => btn.classList.remove('active'));
+  if (event && event.currentTarget) {
+    event.currentTarget.classList.add('active');
+  }
 };
