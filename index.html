@@ -37,9 +37,14 @@
         <a href="#catalogue">Tortlarımız</a>
         <a href="#about">Haqqımızda</a>
         <a href="#contact">Əlaqə</a>
-        <a href="admin.html" class="btn-outline">
-          <i class="fa-solid fa-lock"></i> Admin Paneli
-        </a>
+        
+        <!-- Dinamik İstifadəçi / Giriş Sahəsi (Sağ üst künc) -->
+        <div id="authNavZone" class="user-auth-area">
+          <button id="openAuthModalBtn" class="btn-outline">
+            <i class="fa-regular fa-user"></i> Daxil Ol / Qeydiyyat
+          </button>
+        </div>
+
         <a href="tel:+994501234567" class="btn-contact">
           <i class="fa-solid fa-phone"></i> Zəng Et
         </a>
@@ -117,12 +122,11 @@
     <!-- Category Pills Filter -->
     <div class="category-filter-wrap" id="categoryContainer">
       <button class="category-pill active" data-category="all">Bütün Tortlar</button>
-      <!-- Dynamic Categories injected here -->
+      <!-- Dinamik kateqoriyalar app.js ilə əlavə olunur -->
     </div>
 
     <!-- Products Grid -->
     <div class="product-grid" id="productContainer">
-      <!-- Loading Skeleton or Dynamic Cards injected here -->
       <div class="empty-state">
         <p><i class="fa-solid fa-spinner fa-spin"></i> Tortlar yüklənir...</p>
       </div>
@@ -145,7 +149,7 @@
         <div class="footer-contacts" style="display: flex; flex-direction: column;">
           <a href="#catalogue"><i class="fa-solid fa-angle-right"></i> Tort Kataloqu</a>
           <a href="#about"><i class="fa-solid fa-angle-right"></i> Niyə Biz?</a>
-          <a href="admin.html"><i class="fa-solid fa-angle-right"></i> İdarəetmə Paneli</a>
+          <a href="javascript:void(0)" onclick="openAuthModal('login')"><i class="fa-solid fa-angle-right"></i> Müştəri Girişi</a>
         </div>
       </div>
 
@@ -170,9 +174,81 @@
 
     <div class="footer-bottom">
       <p>© 2026 Sweet Bakery. Bütün hüquqlar qorunur.</p>
-      <a href="admin.html"><i class="fa-solid fa-shield-halved"></i> Admin Girişi</a>
+      <p style="color: rgba(255,255,255,0.4); font-size: 0.8rem;">Sevgi ilə hazırlandı ✨</p>
     </div>
   </footer>
+
+  <!-- ==============================================
+       Vahid Giriş & Qeydiyyat Pop-up (Auth Modal)
+       ============================================== -->
+  <div id="authModal" class="auth-modal-backdrop">
+    <div class="auth-modal-box">
+      <button class="modal-close-btn" id="closeAuthModalBtn">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="brand-logo" style="justify-content: center; margin-bottom: 1.2rem;">
+        <div class="logo-icon">🍰</div>
+        <span>Sweet Bakery</span>
+      </div>
+
+      <!-- Tab Seçimləri: Giriş və Qeydiyyat -->
+      <div class="auth-tabs">
+        <button class="auth-tab-btn active" id="tabLoginBtn" onclick="switchAuthTab('login')">
+          <i class="fa-solid fa-arrow-right-to-bracket"></i> Daxil Ol
+        </button>
+        <button class="auth-tab-btn" id="tabRegisterBtn" onclick="switchAuthTab('register')">
+          <i class="fa-solid fa-user-plus"></i> Qeydiyyat
+        </button>
+      </div>
+
+      <!-- 1. Daxil Ol Formu (Həm adi müştərilər, həm də Admin üçün) -->
+      <div id="loginPanel" class="auth-form-panel active">
+        <form id="userLoginForm">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="loginEmail">E-poçt ünvanı</label>
+            <input type="email" id="loginEmail" placeholder="adınız@example.com" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.4rem;">
+            <label for="loginPassword">Şifrə</label>
+            <input type="password" id="loginPassword" placeholder="••••••••" required />
+          </div>
+
+          <button type="submit" class="btn-contact" style="width: 100%; justify-content: center; padding: 0.85rem; font-size: 1rem; border: none; cursor: pointer;">
+            Daxil Ol <i class="fa-solid fa-arrow-right-to-bracket"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- 2. Qeydiyyat Formu (Yalnız yeni müştərilər üçün) -->
+      <div id="registerPanel" class="auth-form-panel">
+        <form id="userRegisterForm">
+          <div class="form-group" style="margin-bottom: 0.9rem;">
+            <label for="regFullName">Ad və Soyad</label>
+            <input type="text" id="regFullName" placeholder="Aysel Məmmədova" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 0.9rem;">
+            <label for="regEmail">E-poçt ünvanı</label>
+            <input type="email" id="regEmail" placeholder="adınız@example.com" required />
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.4rem;">
+            <label for="regPassword">Şifrə (ən azı 6 simvol)</label>
+            <input type="password" id="regPassword" placeholder="••••••••" minlength="6" required />
+          </div>
+
+          <button type="submit" class="btn-contact" style="width: 100%; justify-content: center; padding: 0.85rem; font-size: 1rem; border: none; cursor: pointer;">
+            Hesab Yarat <i class="fa-solid fa-check"></i>
+          </button>
+        </form>
+      </div>
+
+      <!-- Xəta və ya Məlumat Mesajı -->
+      <div id="authStatusMsg" style="margin-top: 1rem; font-size: 0.88rem; min-height: 20px;"></div>
+    </div>
+  </div>
 
 </body>
 </html>

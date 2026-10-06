@@ -1,7 +1,18 @@
 // admin.js - Sweet Bakery Professional Admin Dashboard Məntiqi
 
+const ADMIN_EMAILS = [
+  'admin@bakery.com',
+  'admin@sweetbakery.az',
+  'elnuraliyew@gmail.com'
+];
+
 let adminProducts = [];
 let adminCategories = [];
+
+function isAdminUser(user) {
+  if (!user || !user.email) return false;
+  return ADMIN_EMAILS.some(e => e.toLowerCase() === user.email.toLowerCase());
+}
 
 // Bildiriş (Toast) Mesajı Funksiyası
 function notify(text, isError = false) {
@@ -28,16 +39,22 @@ function notify(text, isError = false) {
   setTimeout(() => toast.remove(), 3500);
 }
 
-// 1. Auth Status Yoxlanışı (Giriş etməyibsə modal çıxır)
+// 1. Auth Status Yoxlanışı (Giriş etməyibsə modal çıxır, adi müştəridirsə bloklanır)
 auth.onAuthStateChanged(user => {
   const loginModal = document.getElementById('loginModal');
   const adminDashboard = document.getElementById('adminDashboard');
   const userBadge = document.getElementById('userBadge');
 
   if (user) {
+    if (!isAdminUser(user)) {
+      alert('Bu səhifə yalnız Sweet Bakery adminləri üçündür!');
+      window.location.href = 'index.html';
+      return;
+    }
+
     if (loginModal) loginModal.style.display = 'none';
     if (adminDashboard) adminDashboard.style.display = 'flex';
-    if (userBadge) userBadge.innerHTML = `<i class="fa-regular fa-user"></i> ${user.email}`;
+    if (userBadge) userBadge.innerHTML = `<i class="fa-solid fa-crown" style="color:#d4a373;"></i> ${user.email}`;
     initAdminData();
   } else {
     if (loginModal) loginModal.style.display = 'flex';

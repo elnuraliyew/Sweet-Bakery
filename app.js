@@ -1,20 +1,54 @@
-// app.js - Sweet Bakery Əsas Müştəri Məntiqi (İctimai Açıq Vitrin)
+// app.js - Sweet Bakery Əsas Müştəri Məntiqi və Vahid Auth İdarəetməsi
+
+// Qeyd: Bu siyahıda olan emaillər və ya Firestore-da role: 'admin' olan istifadəçilər avtomatik Admin hesab olunur
+const ADMIN_EMAILS = [
+  'admin@bakery.com',
+  'admin@sweetbakery.az',
+  'elnuraliyew@gmail.com'
+];
 
 let currentCategory = 'all';
 let productsList = [];
 let categoriesList = [];
 
-// İlkin Başlanğıc
+// Səhifə yükləndikdə
 document.addEventListener('DOMContentLoaded', () => {
   initApp();
+  initAuthUI();
 });
 
+// Toast Bildiriş Funksiyası
+function showToast(text, isError = false) {
+  const toast = document.createElement('div');
+  toast.innerHTML = `<i class="fa-solid ${isError ? 'fa-circle-xmark' : 'fa-circle-check'}"></i> ${text}`;
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    background: ${isError ? '#c5221f' : '#137333'};
+    color: #fff;
+    padding: 0.9rem 1.6rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  `;
+  document.body.appendChild(toast);
+  setTimeout(() => toast.remove(), 3500);
+}
+
+// ----------------------------------------------------
+// 1. Kateqoriyalar və Məhsulların Yüklənməsi
+// ----------------------------------------------------
 async function initApp() {
   await loadCategories();
   await loadProducts();
 }
 
-// 1. Kateqoriyaları yüklə və dinamik filtrləri qur
 async function loadCategories() {
   const container = document.getElementById('categoryContainer');
   if (!container) return;
@@ -22,7 +56,6 @@ async function loadCategories() {
   try {
     const snapshot = await db.collection('categories').get();
     
-    // Əgər bazada hələ heç bir kateqoriya yoxdursa, ilkin nümunələr göstər
     if (snapshot.empty) {
       categoriesList = [
         { id: 'cat-choc', name: 'Şokoladlı Tortlar' },
@@ -34,7 +67,6 @@ async function loadCategories() {
       categoriesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
 
-    // HTML filtr düymələrini yarat
     container.innerHTML = `
       <button class="category-pill ${currentCategory === 'all' ? 'active' : ''}" data-category="all">
         Bütün Tortlar
@@ -50,17 +82,15 @@ async function loadCategories() {
       container.appendChild(btn);
     });
 
-    // "Bütün Tortlar" düyməsinin dinləyicisi
     container.querySelector('[data-category="all"]').addEventListener('click', function() {
       filterByCategory('all', this);
     });
 
   } catch (error) {
-    console.warn('Firebase kateqoriya xətası (nümunə data istifadə edilir):', error);
+    console.warn('Kateqoriya yüklənməsi xətası:', error);
   }
 }
 
-// 2. Məhsulları (Tortları) Yüklə
 async function loadProducts() {
   const grid = document.getElementById('productContainer');
   if (!grid) return;
@@ -69,7 +99,6 @@ async function loadProducts() {
     const snapshot = await db.collection('products').get();
 
     if (snapshot.empty) {
-      // Əgər admin hələ tort əlavə etməyibsə, saytın lüks vizual görünməsi üçün nümunə tortlar göstəririk
       productsList = [
         {
           id: 'demo-1',
@@ -141,7 +170,7 @@ async function loadProducts() {
     renderProducts();
 
   } catch (error) {
-    console.error('Məhsul yüklənməsində xəta:', error);
+    console.error('Məhsul yüklənməsi xətası:', error);
     grid.innerHTML = `
       <div class="empty-state">
         <p>Məhsullar yüklənərkən xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin.</p>
@@ -150,18 +179,13 @@ async function loadProducts() {
   }
 }
 
-// 3. Kateqoriya üzrə filtrlə
 function filterByCategory(categoryId, clickedBtn) {
   currentCategory = categoryId;
-
-  // Aktiv sinfi dəyiş
   document.querySelectorAll('.category-pill').forEach(btn => btn.classList.remove('active'));
   if (clickedBtn) clickedBtn.classList.add('active');
-
   renderProducts();
 }
 
-// 4. Məhsul kartlarını ekrana ver
 function renderProducts() {
   const grid = document.getElementById('productContainer');
   if (!grid) return;
@@ -185,8 +209,7 @@ function renderProducts() {
     const card = document.createElement('div');
     card.className = 'product-card';
     
-    // WhatsApp sifariş mesajı mətni
-    const orderText = encodeURIComponent(`Salam Sweet Bakery! Mən bu tortu sifariş vermək istəyirəm: "${prod.name}" (Qiymət: ${prod.price} AZN). Ətraflı məlumat ala bilərəm?`);
+    const orderText = encodeURIComponent(`Salam Sweet Bakery! Mən bu tortu sifariş vermək istəyirəm: "${prod.name}" (${prod.price} AZN). Zəhmət olmasa əlaqə saxlayın.`);
     const waUrl = `https://wa.me/994501234567?text=${orderText}`;
 
     card.innerHTML = `
@@ -208,9 +231,198 @@ function renderProducts() {
 
     grid.appendChild(card);
 
-    // Yumşaq animasiya ilə açılış
     setTimeout(() => {
       card.classList.add('loaded');
     }, index * 70);
   });
+}
+
+// ----------------------------------------------------
+// 2. Vahid Giriş / Qeydiyyat və İstifadəçi Təhlili (Auth)
+// ----------------------------------------------------
+function initAuthUI() {
+  const modal = document.getElementById('authModal');
+  const openBtn = document.getElementById('openAuthModalBtn');
+  const closeBtn = document.getElementById('closeAuthModalBtn');
+  const loginForm = document.getElementById('userLoginForm');
+  const registerForm = document.getElementById('userRegisterForm');
+
+  // Modalı Açmaq
+  if (openBtn) {
+    openBtn.addEventListener('click', () => openAuthModal('login'));
+  }
+
+  // Modalı Bağlamaq
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeAuthModal);
+  }
+
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) closeAuthModal();
+    });
+  }
+
+  // Giriş Formu
+  if (loginForm) {
+    loginForm.addEventListener('submit', handleLogin);
+  }
+
+  // Qeydiyyat Formu
+  if (registerForm) {
+    registerForm.addEventListener('submit', handleRegister);
+  }
+
+  // Firebase İstifadəçi Vəziyyətini Dinləyir
+  auth.onAuthStateChanged(async (user) => {
+    updateNavbarAuthState(user);
+  });
+}
+
+// Modal Aç/Bağla
+window.openAuthModal = function(tab = 'login') {
+  const modal = document.getElementById('authModal');
+  if (!modal) return;
+  switchAuthTab(tab);
+  document.getElementById('authStatusMsg').innerHTML = '';
+  modal.classList.add('active');
+};
+
+window.closeAuthModal = function() {
+  const modal = document.getElementById('authModal');
+  if (modal) modal.classList.remove('active');
+};
+
+// Tab dəyişimi: Giriş <-> Qeydiyyat
+window.switchAuthTab = function(type) {
+  const loginPanel = document.getElementById('loginPanel');
+  const registerPanel = document.getElementById('registerPanel');
+  const tabLoginBtn = document.getElementById('tabLoginBtn');
+  const tabRegisterBtn = document.getElementById('tabRegisterBtn');
+  const statusMsg = document.getElementById('authStatusMsg');
+  if (statusMsg) statusMsg.innerHTML = '';
+
+  if (type === 'login') {
+    loginPanel.classList.add('active');
+    registerPanel.classList.remove('active');
+    tabLoginBtn.classList.add('active');
+    tabRegisterBtn.classList.remove('active');
+  } else {
+    registerPanel.classList.add('active');
+    loginPanel.classList.remove('active');
+    tabRegisterBtn.classList.add('active');
+    tabLoginBtn.classList.remove('active');
+  }
+};
+
+// Daxil Olma Əməliyyatı
+async function handleLogin(e) {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  const statusMsg = document.getElementById('authStatusMsg');
+
+  try {
+    statusMsg.innerHTML = '<span style="color:#666;"><i class="fa-solid fa-spinner fa-spin"></i> Yoxlanılır...</span>';
+    const userCredential = await auth.signInWithEmailAndPassword(email, pass);
+    const user = userCredential.user;
+
+    closeAuthModal();
+
+    // Əgər daxil olan şəxs Admindirsə xüsusi salamla
+    if (isAdminUser(user)) {
+      showToast(`Xoş gəldiniz, Admin! İdarəetmə Paneli aktivdir. 👑`);
+    } else {
+      showToast(`Xoş gəldiniz, ${user.displayName || user.email}!`);
+    }
+  } catch (err) {
+    console.error(err);
+    statusMsg.innerHTML = `<span style="color:#c5221f;"><i class="fa-solid fa-triangle-exclamation"></i> E-poçt və ya şifrə yanlışdır.</span>`;
+  }
+}
+
+// Qeydiyyat Əməliyyatı
+async function handleRegister(e) {
+  e.preventDefault();
+  const fullName = document.getElementById('regFullName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPassword').value;
+  const statusMsg = document.getElementById('authStatusMsg');
+
+  if (pass.length < 6) {
+    statusMsg.innerHTML = `<span style="color:#c5221f;">Şifrə ən azı 6 simvoldan ibarət olmalıdır.</span>`;
+    return;
+  }
+
+  try {
+    statusMsg.innerHTML = '<span style="color:#666;"><i class="fa-solid fa-spinner fa-spin"></i> Hesab yaradılır...</span>';
+    const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
+    const user = userCredential.user;
+
+    // Profil adını yenilə
+    await user.updateProfile({ displayName: fullName });
+
+    // Firestore-da istifadəçi qeydi yarat
+    await db.collection('users').doc(user.uid).set({
+      uid: user.uid,
+      name: fullName,
+      email: email,
+      role: 'client',
+      createdAt: new Date()
+    });
+
+    closeAuthModal();
+    showToast(`Hesabınız uğurla yaradıldı! Xoş gəldiniz, ${fullName}.`);
+  } catch (err) {
+    console.error(err);
+    statusMsg.innerHTML = `<span style="color:#c5221f;">Qeydiyyat xətası: ${err.message}</span>`;
+  }
+}
+
+// Admin yoxlanışı (Email və ya xüsusi ad üzrə)
+function isAdminUser(user) {
+  if (!user || !user.email) return false;
+  return ADMIN_EMAILS.some(e => e.toLowerCase() === user.email.toLowerCase());
+}
+
+// Sağ üst menyu vəziyyətini yeniləyir
+function updateNavbarAuthState(user) {
+  const authArea = document.getElementById('authNavZone');
+  if (!authArea) return;
+
+  if (user) {
+    const isUserAdmin = isAdminUser(user);
+    const displayName = user.displayName || user.email.split('@')[0];
+
+    authArea.innerHTML = `
+      <div class="user-profile-badge">
+        <div class="user-avatar"><i class="fa-solid fa-user"></i></div>
+        <span>${displayName}</span>
+      </div>
+      
+      ${isUserAdmin ? `
+        <a href="admin.html" class="btn-admin-crown" title="İdarəetmə Panelinə Keçid">
+          <i class="fa-solid fa-crown"></i> Admin Paneli
+        </a>
+      ` : ''}
+
+      <button id="navLogoutBtn" class="btn-outline" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;" title="Çıxış">
+        <i class="fa-solid fa-right-from-bracket"></i>
+      </button>
+    `;
+
+    document.getElementById('navLogoutBtn').addEventListener('click', async () => {
+      await auth.signOut();
+      showToast('Sistemdən çıxış edildi.');
+    });
+
+  } else {
+    // Giriş edilməyibsə
+    authArea.innerHTML = `
+      <button id="openAuthModalBtn" class="btn-outline">
+        <i class="fa-regular fa-user"></i> Daxil Ol / Qeydiyyat
+      </button>
+    `;
+    document.getElementById('openAuthModalBtn').addEventListener('click', () => openAuthModal('login'));
+  }
 }
