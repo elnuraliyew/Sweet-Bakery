@@ -1445,12 +1445,15 @@ h1, h2, h3, .font-serif {
   margin-top: 1.4rem;
 }
 
-/* Responsive Queries */
+/* ===================================================
+   HƏRTƏRƏFLİ MOBİL VƏ PLANŞET OPTİMİZASİYASI (RESPONSIVE)
+   =================================================== */
+
 @media (max-width: 992px) {
   .hero-section {
     grid-template-columns: 1fr;
     text-align: center;
-    padding-top: 2rem;
+    padding: 3rem 1.5rem 4rem;
   }
   .hero-content p {
     margin: 0 auto 2rem;
@@ -1463,10 +1466,11 @@ h1, h2, h3, .font-serif {
   }
   .features-container {
     grid-template-columns: 1fr;
+    gap: 1.5rem;
   }
   .footer-container {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 2.5rem;
   }
   .admin-layout {
     flex-direction: column;
@@ -1474,10 +1478,12 @@ h1, h2, h3, .font-serif {
   .admin-sidebar {
     width: 100%;
     height: auto;
-    position: relative;
+    position: static;
+    border-right: none;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
   }
   .admin-main {
-    padding: 1.5rem;
+    padding: 1.8rem;
   }
   .admin-stats {
     grid-template-columns: 1fr;
@@ -1491,11 +1497,292 @@ h1, h2, h3, .font-serif {
     overflow-y: auto;
   }
   .product-modal-media {
-    height: 250px;
+    height: 240px;
     min-height: auto;
   }
   .cart-drawer {
     max-width: 100%;
   }
 }
+
+/* SMARTFONLAR VƏ KİÇİK EKRANLAR (iPhone, Android) */
+@media (max-width: 768px) {
+  /* Navbar */
+  .nav-container {
+    padding: 0.75rem 1rem;
+    gap: 0.5rem;
+  }
+
+  .brand-logo span {
+    font-size: 1.25rem;
+  }
+
+  .brand-logo .logo-icon {
+    width: 32px;
+    height: 32px;
+    font-size: 1rem;
+  }
+
+  /* Mobildə uzun linkləri gizlədib əsas idarə düymələrini saxlayırıq */
+  .nav-links a:not(.btn-contact):not(.btn-outline):not(.btn-admin-crown) {
+    display: none;
+  }
+
+  .nav-links {
+    gap: 0.5rem;
+  }
+
+  .nav-icon-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 1rem;
+  }
+
+  .btn-contact {
+    padding: 0.55rem 1rem;
+    font-size: 0.85rem;
+  }
+
+  .btn-outline {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.82rem;
+  }
+
+  .user-profile-badge {
+    padding: 0.35rem 0.75rem;
+    font-size: 0.82rem;
+  }
+
+  .user-profile-badge span {
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .btn-admin-crown {
+    padding: 0.5rem 0.9rem;
+    font-size: 0.8rem;
+  }
+
+  /* Hero Bölməsi */
+  .hero-section {
+    padding: 2.2rem 1rem 3.5rem;
+    gap: 2.2rem;
+  }
+
+  .hero-content .badge {
+    font-size: 0.75rem;
+    padding: 0.35rem 0.9rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .hero-content h1 {
+    font-size: 2.1rem;
+    line-height: 1.22;
+    margin-bottom: 1rem;
+  }
+
+  .hero-content p {
+    font-size: 0.95rem;
+    margin-bottom: 1.6rem;
+  }
+
+  .hero-cta-group {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.8rem;
+  }
+
+  .hero-cta-group a {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .hero-visual-card {
+    border-radius: 20px;
+    border-width: 5px;
+  }
+
+  .hero-visual-card img {
+    height: 270px;
+  }
+
+  .hero-floating-badge {
+    left: 10px;
+    bottom: -15px;
+    padding: 0.75rem 1rem;
+    gap: 0.6rem;
+  }
+
+  .hero-floating-badge .badge-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+  }
+
+  .hero-floating-badge h4 {
+    font-size: 0.88rem;
+  }
+
+  .hero-floating-badge p {
+    font-size: 0.75rem;
+  }
+
+  /* Kataloq və Kateqoriya Çipləri (Barmaqla sürüşdürülən) */
+  .catalogue-section {
+    margin: 3.5rem auto;
+    padding: 0 1rem;
+  }
+
+  .section-head {
+    margin-bottom: 2rem;
+  }
+
+  .section-head h2 {
+    font-size: 2.1rem;
+  }
+
+  .category-filter-wrap {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    justify-content: flex-start;
+    padding: 0.4rem 0.5rem 1.2rem;
+    gap: 0.6rem;
+    margin-bottom: 2rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .category-filter-wrap::-webkit-scrollbar {
+    display: none;
+  }
+
+  .category-pill {
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding: 0.55rem 1.2rem;
+    font-size: 0.88rem;
+  }
+
+  /* Məhsul Şəbəkəsi (Grid) */
+  .product-grid {
+    grid-template-columns: 1fr;
+    gap: 1.6rem;
+  }
+
+  .card-img-wrap {
+    height: 220px;
+  }
+
+  .card-body {
+    padding: 1.3rem;
+  }
+
+  .card-body h3 {
+    font-size: 1.25rem;
+  }
+
+  /* Məhsul Detal Modalı */
+  .product-modal-box {
+    width: 95%;
+    max-height: 88vh;
+    border-radius: 20px;
+  }
+
+  .product-modal-media {
+    height: 220px;
+  }
+
+  .product-modal-content {
+    padding: 1.6rem 1.3rem;
+  }
+
+  .product-modal-content h2 {
+    font-size: 1.5rem;
+  }
+
+  .product-modal-content .modal-price {
+    font-size: 1.5rem;
+  }
+
+  /* Səbət Drawer */
+  .cart-drawer {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .cart-drawer-header {
+    padding: 1.2rem 1.4rem;
+  }
+
+  .cart-items-body {
+    padding: 1.2rem 1.4rem;
+  }
+
+  .cart-drawer-footer {
+    padding: 1.2rem 1.4rem;
+  }
+
+  /* Auth Modalı */
+  .auth-modal-box {
+    width: 95%;
+    padding: 2rem 1.4rem;
+    border-radius: 20px;
+  }
+
+  .auth-tabs {
+    margin-bottom: 1.4rem;
+  }
+
+  /* Footer */
+  .luxury-footer {
+    padding: 3.5rem 1.2rem 2rem;
+    margin-top: 4rem;
+  }
+
+  .footer-container {
+    gap: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .footer-brand h3 {
+    font-size: 1.6rem;
+  }
+
+  .footer-bottom {
+    flex-direction: column;
+    gap: 0.8rem;
+    text-align: center;
+  }
+
+  /* Admin Paneli Mobildə */
+  .admin-main {
+    padding: 1.2rem 1rem;
+  }
+
+  .admin-header h1 {
+    font-size: 1.6rem;
+  }
+
+  .admin-card {
+    padding: 1.4rem;
+    border-radius: 16px;
+  }
+
+  .admin-nav {
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 0.5rem;
+    scrollbar-width: none;
+  }
+
+  .admin-nav-item {
+    white-space: nowrap;
+    font-size: 0.85rem;
+    padding: 0.6rem 1rem;
+  }
+}
+
 
