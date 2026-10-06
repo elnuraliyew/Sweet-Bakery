@@ -14,6 +14,7 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
   <script src="firebase-config.js"></script>
   <script defer src="app.js"></script>
 </head>
@@ -57,8 +58,8 @@
           </button>
         </div>
 
-        <a href="tel:+994501234567" class="btn-contact">
-          <i class="fa-solid fa-phone"></i> Zəng Et
+        <a href="tel:+994703676561" class="btn-contact">
+          <i class="fa-solid fa-phone"></i> 070 367 65 61
         </a>
       </div>
     </div>
@@ -168,11 +169,11 @@
       <div class="footer-block">
         <h4>Sifariş və Əlaqə</h4>
         <div class="footer-contacts">
-          <a href="tel:+994501234567">
-            <i class="fa-solid fa-phone"></i> +994 50 123 45 67
+          <a href="tel:+994703676561">
+            <i class="fa-solid fa-phone"></i> 070 367 65 61
           </a>
-          <a href="https://wa.me/994501234567" target="_blank">
-            <i class="fa-brands fa-whatsapp"></i> WhatsApp ilə Sifariş
+          <a href="https://wa.me/994703676561" target="_blank">
+            <i class="fa-brands fa-whatsapp"></i> WhatsApp ilə Sifariş (070 367 65 61)
           </a>
           <a href="https://instagram.com" target="_blank">
             <i class="fa-brands fa-instagram"></i> @sweetbakery.az
@@ -206,15 +207,15 @@
       <div class="product-modal-content">
         <span class="modal-cat-badge" id="detailCat">Kateqoriya</span>
         <h2 id="detailName">Tort Adı</h2>
-        <div class="modal-price" id="detailPrice">0 AZN</div>
+        <div class="modal-price" id="detailPrice">Kiloqramı: 0 AZN</div>
         <p class="modal-desc" id="detailDesc">Tortun inqrediyentləri və təsviri...</p>
 
         <div class="qty-control-wrap">
-          <label>Miqdar:</label>
+          <label>Çəki (kq):</label>
           <div class="qty-box">
-            <button class="qty-btn" onclick="changeDetailQty(-1)">-</button>
-            <span class="qty-val" id="detailQty">1</span>
-            <button class="qty-btn" onclick="changeDetailQty(1)">+</button>
+            <button class="qty-btn" onclick="changeDetailQty(-0.5)">-</button>
+            <span class="qty-val" id="detailQty">1 kq</span>
+            <button class="qty-btn" onclick="changeDetailQty(0.5)">+</button>
           </div>
         </div>
 

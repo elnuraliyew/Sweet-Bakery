@@ -248,7 +248,7 @@ function renderProducts() {
         <h3 class="card-clickable" onclick="openProductDetail('${prod.id}')">${prod.name}</h3>
         <p class="card-clickable" onclick="openProductDetail('${prod.id}')">${prod.description}</p>
         <div class="card-footer">
-          <div class="card-price">${prod.price} <span>AZN</span></div>
+          <div class="card-price">${prod.price} <span>AZN / kq</span></div>
           <button onclick="addToCart('${prod.id}', 1)" class="btn-order" style="border:none; cursor:pointer;">
             <i class="fa-solid fa-basket-shopping"></i> Səbətə At
           </button>
@@ -277,9 +277,9 @@ window.openProductDetail = function(productId) {
   document.getElementById('detailImg').src = prod.imageUrl;
   document.getElementById('detailCat').textContent = prod.categoryName || 'Eksklüziv';
   document.getElementById('detailName').textContent = prod.name;
-  document.getElementById('detailPrice').textContent = `${prod.price} AZN`;
+  document.getElementById('detailPrice').textContent = `Kiloqramı: ${prod.price} AZN`;
   document.getElementById('detailDesc').textContent = prod.description;
-  document.getElementById('detailQty').textContent = currentDetailQty;
+  document.getElementById('detailQty').textContent = `${currentDetailQty} kq`;
 
   // Favori vəziyyəti
   const isFav = wishlist.some(item => item.id === prod.id);
@@ -307,8 +307,8 @@ window.closeProductModal = function() {
 };
 
 window.changeDetailQty = function(delta) {
-  currentDetailQty = Math.max(1, currentDetailQty + delta);
-  document.getElementById('detailQty').textContent = currentDetailQty;
+  currentDetailQty = Math.max(0.5, +(currentDetailQty + delta).toFixed(1));
+  document.getElementById('detailQty').textContent = `${currentDetailQty} kq`;
 };
 
 // ----------------------------------------------------
@@ -351,7 +351,7 @@ window.addToCart = function(productId, qty = 1) {
 
   const existing = cart.find(item => item.id === prod.id);
   if (existing) {
-    existing.qty += qty;
+    existing.qty = +(existing.qty + qty).toFixed(1);
   } else {
     cart.push({
       id: prod.id,
@@ -364,7 +364,7 @@ window.addToCart = function(productId, qty = 1) {
 
   saveCart();
   updateBadgeCounts();
-  showToast(`"${prod.name}" səbətə əlavə edildi!`);
+  showToast(`"${prod.name}" (${qty} kq) səbətə əlavə edildi!`);
   openCartDrawer();
 };
 
@@ -372,7 +372,7 @@ window.updateCartQty = function(productId, delta) {
   const item = cart.find(i => i.id === productId);
   if (!item) return;
 
-  item.qty += delta;
+  item.qty = +(item.qty + delta).toFixed(1);
   if (item.qty <= 0) {
     cart = cart.filter(i => i.id !== productId);
   }
@@ -419,9 +419,9 @@ function renderCartDrawer() {
   let orderSummaryText = 'Salam Sweet Bakery! Səbətimdəki tortları sifariş vermək istəyirəm:%0A%0A';
 
   cart.forEach(item => {
-    const itemTotal = item.price * item.qty;
+    const itemTotal = +(item.price * item.qty).toFixed(1);
     subtotal += itemTotal;
-    orderSummaryText += `🍰 *${item.name}* — ${item.qty} ədəd (${itemTotal} AZN)%0A`;
+    orderSummaryText += `🍰 *${item.name}* — ${item.qty} kq (${itemTotal} AZN)%0A`;
 
     const row = document.createElement('div');
     row.className = 'cart-item-card';
@@ -429,11 +429,11 @@ function renderCartDrawer() {
       <img src="${item.imageUrl}" class="cart-item-img" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=100&q=80'" />
       <div class="cart-item-info">
         <h4>${item.name}</h4>
-        <div class="item-unit-price">${item.price} AZN / ədəd</div>
+        <div class="item-unit-price">${item.price} AZN / kq</div>
         <div class="cart-item-ctrl">
-          <button onclick="updateCartQty('${item.id}', -1)">-</button>
-          <span style="font-size:0.85rem; font-weight:700; min-width:20px; text-align:center;">${item.qty}</span>
-          <button onclick="updateCartQty('${item.id}', 1)">+</button>
+          <button onclick="updateCartQty('${item.id}', -0.5)">-</button>
+          <span style="font-size:0.85rem; font-weight:700; min-width:32px; text-align:center;">${item.qty} kq</span>
+          <button onclick="updateCartQty('${item.id}', 0.5)">+</button>
         </div>
       </div>
       <div style="text-align: right;">
@@ -446,10 +446,12 @@ function renderCartDrawer() {
     container.appendChild(row);
   });
 
+  subtotal = subtotal.toFixed(1);
   orderSummaryText += `%0A💰 *Ümumi Məbləğ:* ${subtotal} AZN%0AZəhmət olmasa sifarişi qəbul edəsiniz.`;
   totalEl.textContent = `${subtotal} AZN`;
-  waBtn.href = `https://wa.me/994501234567?text=${orderSummaryText}`;
+  waBtn.href = `https://wa.me/994703676561?text=${orderSummaryText}`;
 }
+
 
 // ----------------------------------------------------
 // 4. SEVİMLİLƏR (WISHLIST) İDARƏETMƏSİ

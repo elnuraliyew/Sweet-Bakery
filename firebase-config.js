@@ -18,3 +18,4 @@ if (!firebase.apps.length) {
 
 const auth = firebase.auth();
 const db = firebase.firestore();
+const storage = typeof firebase.storage === 'function' ? firebase.storage() : null;

@@ -105,6 +105,12 @@ function setupEventListeners() {
     prodForm.addEventListener('submit', handleProductSubmit);
   }
 
+  // Şəkil faylı seçildikdə (Cihaz yaddaşından)
+  const fileInput = document.getElementById('prodFileInput');
+  if (fileInput) {
+    fileInput.addEventListener('change', handleFileSelect);
+  }
+
   // Redaktəni Ləğv Et
   const cancelBtn = document.getElementById('cancelProdEditBtn');
   if (cancelBtn) {
@@ -116,6 +122,68 @@ function setupEventListeners() {
   if (catForm) {
     catForm.addEventListener('submit', handleCategorySubmit);
   }
+}
+
+// Şəkli cihazdan oxuyub optimallaşdıran funksiya
+async function handleFileSelect(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const previewContainer = document.getElementById('imagePreviewContainer');
+  const previewImg = document.getElementById('imagePreview');
+  const hiddenInput = document.getElementById('prodImageUrl');
+
+  try {
+    notify('Şəkil hazırlanır...');
+    const compressedDataUrl = await compressImageFile(file, 900, 0.85);
+    hiddenInput.value = compressedDataUrl;
+    previewImg.src = compressedDataUrl;
+    previewContainer.style.display = 'flex';
+    notify('Şəkil uğurla yükləndi!');
+  } catch (err) {
+    console.error(err);
+    notify('Şəkli emal edərkən xəta baş verdi', true);
+  }
+}
+
+// Canvas ilə şəkli sıxmaq (Keyfiyyəti itirmədən yüngülləşdirir)
+function compressImageFile(file, maxDimension = 900, quality = 0.85) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (readerEvent) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxDimension) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          }
+        } else {
+          if (height > maxDimension) {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(dataUrl);
+      };
+      img.onerror = reject;
+      img.src = readerEvent.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 // 5. Kateqoriyaları Gətir & Render Et
@@ -245,7 +313,7 @@ window.deleteCategory = async function(id) {
   }
 };
 
-// 8. Tortları Gətir & Render Et
+// 10. Tortları Gətir & Render Et
 async function fetchProducts() {
   try {
     const snap = await db.collection('products').get();
@@ -273,7 +341,7 @@ async function fetchProducts() {
         </td>
         <td style="font-weight: 700; color: var(--choco-dark);">${prod.name}</td>
         <td><span style="background: var(--soft-rose); color: var(--dusty-rose); padding: 0.25rem 0.7rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600;">${catName}</span></td>
-        <td style="font-weight: 700; color: var(--dusty-rose);">${prod.price} AZN</td>
+        <td style="font-weight: 700; color: var(--dusty-rose);">${prod.price} AZN / kq</td>
         <td style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--choco-muted); font-size: 0.85rem;">${prod.description}</td>
         <td style="text-align: right; white-space: nowrap;">
           <button class="action-btn action-edit" onclick="startEditProduct('${prod.id}')">
@@ -293,7 +361,7 @@ async function fetchProducts() {
   }
 }
 
-// 9. Tort Əlavə Et və ya Yenilə (Create / Update)
+// 11. Tort Əlavə Et və ya Yenilə (Create / Update)
 async function handleProductSubmit(e) {
   e.preventDefault();
 
@@ -304,16 +372,23 @@ async function handleProductSubmit(e) {
   const imageUrl = document.getElementById('prodImageUrl').value.trim();
   const description = document.getElementById('prodDesc').value.trim();
 
+  if (!imageUrl) {
+    notify('Zəhmət olmasa tortun şəklini yaddaşdan seçin!', true);
+    return;
+  }
+
   const productData = {
     name,
     price,
     categoryId,
     imageUrl,
     description,
+    priceUnit: 'kq',
     updatedAt: new Date()
   };
 
   try {
+    notify('Məlumatlar bazada saxlanılır...');
     if (editId) {
       await db.collection('products').doc(editId).update(productData);
       notify(`"${name}" uğurla yeniləndi!`);
@@ -332,7 +407,7 @@ async function handleProductSubmit(e) {
   }
 }
 
-// 10. Tort Redaktəsinə Başla
+// 12. Tort Redaktəsinə Başla
 window.startEditProduct = function(id) {
   const prod = adminProducts.find(p => p.id === id);
   if (!prod) return;
@@ -344,6 +419,14 @@ window.startEditProduct = function(id) {
   document.getElementById('prodImageUrl').value = prod.imageUrl;
   document.getElementById('prodDesc').value = prod.description;
 
+  // Şəklin önizlənməsi
+  if (prod.imageUrl) {
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    const previewImg = document.getElementById('imagePreview');
+    previewImg.src = prod.imageUrl;
+    previewContainer.style.display = 'flex';
+  }
+
   document.getElementById('productFormTitle').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Tortu Redaktə Et';
   document.getElementById('submitProdBtn').innerHTML = '<i class="fa-solid fa-check"></i> Yenilə';
   document.getElementById('cancelProdEditBtn').style.display = 'inline-block';
@@ -351,10 +434,12 @@ window.startEditProduct = function(id) {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// 11. Redaktəni Ləğv Et
+// 13. Redaktəni Ləğv Et
 function resetProductForm() {
   document.getElementById('editProdId').value = '';
   document.getElementById('productForm').reset();
+  document.getElementById('prodImageUrl').value = '';
+  document.getElementById('imagePreviewContainer').style.display = 'none';
   document.getElementById('productFormTitle').innerHTML = '<i class="fa-solid fa-circle-plus"></i> Yeni Tort Əlavə Et';
   document.getElementById('submitProdBtn').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Yadda Saxla';
   document.getElementById('cancelProdEditBtn').style.display = 'none';
