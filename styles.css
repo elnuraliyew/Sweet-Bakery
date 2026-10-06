@@ -1,0 +1,243 @@
+/* Global Styles for Sweet Bakery */
+/* Colors */
+:root {
+    --bg-pink: #FDE2E4;           /* pastel pink */
+    --card-white: #FAF9F6;        /* cream/white */
+    --accent-rose: #C08081;       /* dusty rose */
+    --text-brown: #4B2E2A;        /* chocolate brown */
+    --glass-bg: rgba(255, 255, 255, 0.15);
+    --glass-blur: blur(12px);
+}
+
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+}
+
+body {
+    background: var(--bg-pink);
+    color: var(--text-brown);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+}
+
+/* Full‑screen background image (blurred) */
+.bg-image {
+    position: fixed;
+    inset: 0;
+    background: url('https://images.unsplash.com/photo-1608232742995-2e7a6c69e6d8?auto=format&fit=crop&w=1600&q=80') center/cover no-repeat;
+    filter: blur(8px) brightness(0.85);
+    z-index: -1;
+}
+
+/* Glass‑morphism card */
+.login-card, .admin-card, .hero-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+    padding: 2rem;
+    max-width: 360px;
+    margin: 5vh auto;
+    text-align: center;
+}
+
+h2 {
+    margin-bottom: 1.5rem;
+    color: var(--accent-rose);
+}
+
+input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 12px;
+    background: rgba(255,255,255,0.2);
+    color: var(--text-brown);
+    font-size: 1rem;
+    outline: none;
+    transition: border 0.2s, background 0.2s;
+}
+
+input:focus {
+    border-color: var(--accent-rose);
+    background: rgba(255,255,255,0.3);
+}
+
+button {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--accent-rose);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+button:hover {
+    background: #b06a6b;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+.error {
+    color: #d9534f;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+}
+
+/* Home page layout */
+header {
+    text-align: center;
+    padding: 2rem 1rem;
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    margin: 2rem auto;
+    max-width: 900px;
+    border-radius: 16px;
+}
+
+header h1 {
+    color: var(--accent-rose);
+    margin-bottom: 0.5rem;
+}
+
+.categories {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin: 1rem 0;
+}
+
+.categories button {
+    max-width: 150px;
+    background: var(--card-white);
+    color: var(--text-brown);
+    border: 1px solid var(--accent-rose);
+}
+
+.products {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1.5rem;
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 1rem;
+}
+
+.product-card {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border-radius: 12px;
+    overflow: hidden;
+    text-align: center;
+    padding-bottom: 1rem;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.product-card.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.product-card img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+}
+
+.product-card h3 {
+    margin: 0.75rem 0 0.25rem;
+    color: var(--accent-rose);
+}
+
+.product-card p {
+    margin: 0.25rem 0;
+    font-size: 0.9rem;
+}
+
+.product-card .price {
+    font-weight: bold;
+    color: var(--text-brown);
+    margin-top: 0.5rem;
+}
+
+footer {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    text-align: center;
+    padding: 1.5rem;
+    margin-top: 3rem;
+    border-radius: 16px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+    color: var(--text-brown);
+}
+
+footer a {
+    color: var(--accent-rose);
+    text-decoration: none;
+    margin: 0 0.5rem;
+}
+
+/* Admin panel styles */
+.admin-panel {
+    max-width: 1000px;
+    margin: 2rem auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+.admin-section {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border-radius: 12px;
+    padding: 1.5rem;
+}
+
+.admin-section h3 {
+    margin-bottom: 1rem;
+    color: var(--accent-rose);
+}
+
+.admin-section input, .admin-section select {
+    width: 100%;
+    padding: 0.5rem;
+    margin-bottom: 0.75rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.2);
+    color: var(--text-brown);
+}
+
+.admin-section button {
+    width: auto;
+    margin-right: 0.5rem;
+    background: var(--accent-rose);
+    color: #fff;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .login-card, .admin-card, .hero-card {
+        margin: 2vh auto;
+        width: 90%;
+    }
+    .categories {
+        flex-direction: column;
+    }
+}

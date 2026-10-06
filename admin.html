@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sweet Bakery – Admin Panel</title>
+    <link rel="stylesheet" href="styles.css" />
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script defer src="admin.js"></script>
+</head>
+<body>
+    <div class="admin-panel">
+        <header class="hero-card" style="margin-bottom: 2rem;">
+            <h2>Sweet Bakery – İdarəetmə Paneli (Admin)</h2>
+            <p>Kateqoriyaları və tort məhsullarını buradan idarə edin</p>
+            <div style="margin-top: 1rem; display: flex; gap: 10px; justify-content: center;">
+                <a href="index.html" style="color: var(--accent-rose); text-decoration: underline; font-weight: bold;">Sayta Baxış (Ana Səhifə)</a>
+                <button id="logoutBtn" style="width: auto; padding: 0.5rem 1rem;">Çıxış et</button>
+            </div>
+        </header>
+
+        <!-- Kateqoriya İdarəetməsi -->
+        <section class="admin-section" id="categorySection">
+            <h3>Kateqoriyalar</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 1rem;">
+                <input type="text" id="newCatName" placeholder="Yeni kateqoriya adı (məs: Şokoladlı)" style="margin-bottom: 0;" />
+                <button id="addCategoryBtn" style="width: 140px;">Əlavə et</button>
+            </div>
+            <ul id="categoryList" style="list-style: none; padding: 0;"></ul>
+        </section>
+
+        <!-- Məhsul İdarəetməsi -->
+        <section class="admin-section" id="productSection">
+            <h3 id="formTitle">Yeni Tort Əlavə Et</h3>
+            <input type="hidden" id="editProductId" value="" />
+            
+            <input type="text" id="prodName" placeholder="Tortun adı (məs: Qırmızı Məxmər)" required />
+            <input type="text" id="prodDesc" placeholder="Tərkibi və qısa məlumat (məs: Zərif biskvit, vanilli krem)" required />
+            <input type="number" id="prodPrice" placeholder="Qiyməti (AZN)" required />
+            <input type="url" id="prodImg" placeholder="Şəkil linki (URL - məs: https://...)" required />
+            
+            <label for="prodCategory" style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Kateqoriya seçin:</label>
+            <select id="prodCategory" required>
+                <option value="">Kateqoriya seçin</option>
+            </select>
+            
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button id="saveProductBtn">Tortu Yadda Saxla</button>
+                <button id="cancelEditBtn" style="display: none; background: #888;">Ləğv et</button>
+            </div>
+
+            <h3 style="margin-top: 2rem;">Mövcud Tortlar</h3>
+            <div id="productList" style="display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));"></div>
+        </section>
+    </div>
+</body>
+</html>

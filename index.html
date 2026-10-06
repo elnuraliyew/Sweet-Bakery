@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sweet Bakery – Ana Səhifə</title>
+    <link rel="stylesheet" href="styles.css" />
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script defer src="app.js"></script>
+</head>
+<body>
+    <!-- Hero Section -->
+    <header class="hero-card">
+        <h1>Sweet Bakery - Şirin xəyallarınızın dadı</h1>
+        <p>Ən xüsusi tortlar, sevgi ilə hazırlanır.</p>
+        <div style="margin-top: 1rem; display: flex; gap: 10px; justify-content: center;">
+            <a href="admin.html" style="color: var(--accent-rose); font-weight: bold; text-decoration: underline;">Admin Paneli</a>
+            <button id="logoutBtn" style="width: auto; padding: 0.4rem 1rem;">Çıxış et</button>
+        </div>
+    </header>
+
+    <!-- Category Buttons -->
+    <nav class="categories" id="categoryContainer">
+        <!-- Buttons will be injected by app.js -->
+    </nav>
+
+    <!-- Product Gallery -->
+    <section class="products" id="productContainer">
+        <!-- Product cards will be injected by app.js -->
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>Sifariş və suallarınız üçün bizimlə əlaqə saxlayın</p>
+        <a href="https://instagram.com/sweetbakery" target="_blank">Instagram</a>
+        <a href="tel:+1234567890">+1 234 567 890</a>
+    </footer>
+</body>
+</html>

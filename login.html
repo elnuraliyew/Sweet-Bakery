@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sweet Bakery – Giriş</title>
+    <link rel="stylesheet" href="styles.css" />
+    <!-- Firebase SDKs (Auth + Firestore) -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script defer src="app.js"></script>
+</head>
+<body>
+    <!-- Full‑screen blurred background image -->
+    <div class="bg-image"></div>
+
+    <!-- Glass‑morphism login card -->
+    <div class="login-card">
+        <h2>Sweet Bakery‑a xoş gəlmisiniz</h2>
+        <form id="loginForm">
+            <input type="email" id="email" placeholder="İstifadəçi adı (e‑mail)" required />
+            <input type="password" id="password" placeholder="Şifrə" required />
+            <button type="submit">Daxil ol</button>
+        </form>
+        <p id="errorMsg" class="error"></p>
+    </div>
+</body>
+</html>
