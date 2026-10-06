@@ -150,7 +150,10 @@ async function fetchCategories() {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td style="font-weight: 600;">${cat.name}</td>
-        <td style="text-align: right;">
+        <td style="text-align: right; white-space: nowrap;">
+          <button class="action-btn action-edit" onclick="editCategory('${cat.id}', '${cat.name.replace(/'/g, "\\'")}')">
+            <i class="fa-solid fa-pen-to-square"></i> Redaktə
+          </button>
           <button class="action-btn action-delete" onclick="deleteCategory('${cat.id}')">
             <i class="fa-solid fa-trash"></i> Sil
           </button>
@@ -184,7 +187,51 @@ async function handleCategorySubmit(e) {
   }
 }
 
-// 7. Kateqoriyanı Sil
+// 7. Kateqoriyanı Redaktə Et
+window.editCategory = async function(id, currentName) {
+  const newName = prompt('Kateqoriyanın yeni adını daxil edin:', currentName);
+  if (!newName || newName.trim() === '' || newName.trim() === currentName) return;
+
+  try {
+    await db.collection('categories').doc(id).update({ name: newName.trim() });
+    notify(`Kateqoriya "${newName.trim()}" olaraq yeniləndi!`);
+    await fetchCategories();
+    await fetchProducts();
+  } catch (err) {
+    console.error(err);
+    notify(err.message, true);
+  }
+};
+
+// 8. Standart Kateqoriyaları Tətbiq Et (Şəkildəki 4 kateqoriya)
+window.seedDefaultCategories = async function() {
+  if (!confirm('Standart kateqoriyalar (Şokoladlı, Meyvəli, Toy & Nişan, Bento) bazaya əlavə edilsin?')) return;
+  const DEFAULT_CATS = [
+    'Şokoladlı Tortlar',
+    'Meyvəli & Giləmeyvəli',
+    'Toy & Nişan Tortları',
+    'Bento Tortlar'
+  ];
+
+  try {
+    const batch = db.batch();
+    for (const catName of DEFAULT_CATS) {
+      const exists = adminCategories.some(c => c.name.toLowerCase() === catName.toLowerCase());
+      if (!exists) {
+        const docRef = db.collection('categories').doc();
+        batch.set(docRef, { name: catName, createdAt: new Date() });
+      }
+    }
+    await batch.commit();
+    notify('Standart kateqoriyalar uğurla tətbiq edildi!');
+    await fetchCategories();
+  } catch (err) {
+    console.error(err);
+    notify(err.message, true);
+  }
+};
+
+// 9. Kateqoriyanı Sil
 window.deleteCategory = async function(id) {
   if (!confirm('Bu kateqoriyanı silmək istəyirsiniz?')) return;
   try {

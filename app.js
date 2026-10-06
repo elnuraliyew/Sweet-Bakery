@@ -1,20 +1,35 @@
-// app.js - Sweet Bakery Əsas Müştəri Məntiqi və Vahid Auth İdarəetməsi
+// app.js - Sweet Bakery Əsas Müştəri Məntiqi, Səbət, Sevimlilər və Məhsul Detalı
 
-// Qeyd: Bu siyahıda olan emaillər və ya Firestore-da role: 'admin' olan istifadəçilər avtomatik Admin hesab olunur
 const ADMIN_EMAILS = [
   'admin@bakery.com',
   'admin@sweetbakery.az',
   'elnuraliyew@gmail.com'
 ];
 
+// İlkin kateqoriyalar (şəkildə olanlar)
+const DEFAULT_CATEGORIES = [
+  'Şokoladlı Tortlar',
+  'Meyvəli & Giləmeyvəli',
+  'Toy & Nişan Tortları',
+  'Bento Tortlar'
+];
+
 let currentCategory = 'all';
 let productsList = [];
 let categoriesList = [];
 
-// Səhifə yükləndikdə
+// Səbət və Sevimlilər vəziyyəti (LocalStorage ilə saxlanılır)
+let cart = JSON.parse(localStorage.getItem('sweet_bakery_cart') || '[]');
+let wishlist = JSON.parse(localStorage.getItem('sweet_bakery_wishlist') || '[]');
+let selectedDetailProduct = null;
+let currentDetailQty = 1;
+
+// Səhifə başladıldıqda
 document.addEventListener('DOMContentLoaded', () => {
   initApp();
   initAuthUI();
+  initCartAndWishlistUI();
+  updateBadgeCounts();
 });
 
 // Toast Bildiriş Funksiyası
@@ -36,6 +51,7 @@ function showToast(text, isError = false) {
     display: flex;
     align-items: center;
     gap: 0.6rem;
+    animation: fadeIn 0.3s ease;
   `;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3500);
@@ -56,13 +72,17 @@ async function loadCategories() {
   try {
     const snapshot = await db.collection('categories').get();
     
+    // Əgər bazada kateqoriya yoxdursa, şəkildəki kateqoriyaları bazaya avtomatik yazırıq
     if (snapshot.empty) {
-      categoriesList = [
-        { id: 'cat-choc', name: 'Şokoladlı Tortlar' },
-        { id: 'cat-berry', name: 'Meyvəli & Giləmeyvəli' },
-        { id: 'cat-wedding', name: 'Toy & Nişan Tortları' },
-        { id: 'cat-bento', name: 'Bento Tortlar' }
-      ];
+      const batch = db.batch();
+      const createdCats = [];
+      for (const catName of DEFAULT_CATEGORIES) {
+        const docRef = db.collection('categories').doc();
+        batch.set(docRef, { name: catName, createdAt: new Date() });
+        createdCats.push({ id: docRef.id, name: catName });
+      }
+      await batch.commit();
+      categoriesList = createdCats;
     } else {
       categoriesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
@@ -99,6 +119,12 @@ async function loadProducts() {
     const snapshot = await db.collection('products').get();
 
     if (snapshot.empty) {
+      // Əgər admin hələ tort əlavə etməyibsə, şəkildəki kateqoriyalara uyğun gözəl nümunələr
+      const chocCat = categoriesList.find(c => c.name.includes('Şokoladlı')) || { id: 'cat-choc', name: 'Şokoladlı Tortlar' };
+      const berryCat = categoriesList.find(c => c.name.includes('Meyvəli')) || { id: 'cat-berry', name: 'Meyvəli & Giləmeyvəli' };
+      const weddingCat = categoriesList.find(c => c.name.includes('Toy')) || { id: 'cat-wedding', name: 'Toy & Nişan Tortları' };
+      const bentoCat = categoriesList.find(c => c.name.includes('Bento')) || { id: 'cat-bento', name: 'Bento Tortlar' };
+
       productsList = [
         {
           id: 'demo-1',
@@ -106,8 +132,8 @@ async function loadProducts() {
           description: 'Həqiqi Belçika südlü şokoladı, qozlu biskvit və zərif qanaş kremi.',
           price: 55,
           imageUrl: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80',
-          categoryId: 'cat-choc',
-          categoryName: 'Şokoladlı'
+          categoryId: chocCat.id,
+          categoryName: chocCat.name
         },
         {
           id: 'demo-2',
@@ -115,8 +141,8 @@ async function loadProducts() {
           description: 'Klassik Red Velvet biskviti, maskarpone pendirli krem və təbii təzə moruq.',
           price: 60,
           imageUrl: 'https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?auto=format&fit=crop&w=800&q=80',
-          categoryId: 'cat-berry',
-          categoryName: 'Meyvəli'
+          categoryId: berryCat.id,
+          categoryName: berryCat.name
         },
         {
           id: 'demo-3',
@@ -124,8 +150,8 @@ async function loadProducts() {
           description: 'Fərdi miniatür bento tortu, yüngül vanilli mus və təzə giləmeyvələr.',
           price: 28,
           imageUrl: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=800&q=80',
-          categoryId: 'cat-bento',
-          categoryName: 'Bento'
+          categoryId: bentoCat.id,
+          categoryName: bentoCat.name
         },
         {
           id: 'demo-4',
@@ -133,8 +159,8 @@ async function loadProducts() {
           description: '2 mərtəbəli, qızılı vərəq və canlı güllərlə bəzədilmiş xüsusi gün şedevri.',
           price: 180,
           imageUrl: 'https://images.unsplash.com/photo-1535254973040-607b474cb50d?auto=format&fit=crop&w=800&q=80',
-          categoryId: 'cat-wedding',
-          categoryName: 'Toy & Nişan'
+          categoryId: weddingCat.id,
+          categoryName: weddingCat.name
         },
         {
           id: 'demo-5',
@@ -142,8 +168,8 @@ async function loadProducts() {
           description: 'Təbii Antep püstəsi pastası, moruq konfisi və xırtıldayan laylar.',
           price: 65,
           imageUrl: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=80',
-          categoryId: 'cat-berry',
-          categoryName: 'Meyvəli'
+          categoryId: berryCat.id,
+          categoryName: berryCat.name
         },
         {
           id: 'demo-6',
@@ -151,8 +177,8 @@ async function loadProducts() {
           description: 'Duzlu karamel qatı, qara şokoladlı muss və truffel topları ilə.',
           price: 58,
           imageUrl: 'https://images.unsplash.com/photo-1549576490-b0b4831ef60a?auto=format&fit=crop&w=800&q=80',
-          categoryId: 'cat-choc',
-          categoryName: 'Şokoladlı'
+          categoryId: chocCat.id,
+          categoryName: chocCat.name
         }
       ];
     } else {
@@ -206,25 +232,26 @@ function renderProducts() {
   grid.innerHTML = '';
 
   filtered.forEach((prod, index) => {
+    const isFav = wishlist.some(item => item.id === prod.id);
     const card = document.createElement('div');
     card.className = 'product-card';
-    
-    const orderText = encodeURIComponent(`Salam Sweet Bakery! Mən bu tortu sifariş vermək istəyirəm: "${prod.name}" (${prod.price} AZN). Zəhmət olmasa əlaqə saxlayın.`);
-    const waUrl = `https://wa.me/994501234567?text=${orderText}`;
 
     card.innerHTML = `
-      <div class="card-img-wrap">
+      <div class="card-img-wrap card-clickable" onclick="openProductDetail('${prod.id}')">
         <img src="${prod.imageUrl}" alt="${prod.name}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80'" />
         <span class="card-badge">${prod.categoryName || 'Eksklüziv'}</span>
+        <button class="btn-fav-card ${isFav ? 'active' : ''}" onclick="toggleWishlist('${prod.id}', event)" title="Sevimlilərə əlavə et">
+          <i class="${isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}"></i>
+        </button>
       </div>
       <div class="card-body">
-        <h3>${prod.name}</h3>
-        <p>${prod.description}</p>
+        <h3 class="card-clickable" onclick="openProductDetail('${prod.id}')">${prod.name}</h3>
+        <p class="card-clickable" onclick="openProductDetail('${prod.id}')">${prod.description}</p>
         <div class="card-footer">
           <div class="card-price">${prod.price} <span>AZN</span></div>
-          <a href="${waUrl}" target="_blank" class="btn-order">
-            <i class="fa-brands fa-whatsapp"></i> Sifariş Et
-          </a>
+          <button onclick="addToCart('${prod.id}', 1)" class="btn-order" style="border:none; cursor:pointer;">
+            <i class="fa-solid fa-basket-shopping"></i> Səbətə At
+          </button>
         </div>
       </div>
     `;
@@ -233,12 +260,284 @@ function renderProducts() {
 
     setTimeout(() => {
       card.classList.add('loaded');
-    }, index * 70);
+    }, index * 60);
   });
 }
 
 // ----------------------------------------------------
-// 2. Vahid Giriş / Qeydiyyat və İstifadəçi Təhlili (Auth)
+// 2. MƏHSULA TAM ŞƏKİLDƏ BAXIŞ (QUICK VIEW MODAL)
+// ----------------------------------------------------
+window.openProductDetail = function(productId) {
+  const prod = productsList.find(p => p.id === productId);
+  if (!prod) return;
+
+  selectedDetailProduct = prod;
+  currentDetailQty = 1;
+
+  document.getElementById('detailImg').src = prod.imageUrl;
+  document.getElementById('detailCat').textContent = prod.categoryName || 'Eksklüziv';
+  document.getElementById('detailName').textContent = prod.name;
+  document.getElementById('detailPrice').textContent = `${prod.price} AZN`;
+  document.getElementById('detailDesc').textContent = prod.description;
+  document.getElementById('detailQty').textContent = currentDetailQty;
+
+  // Favori vəziyyəti
+  const isFav = wishlist.some(item => item.id === prod.id);
+  const favBtn = document.getElementById('modalFavBtn');
+  favBtn.innerHTML = `<i class="${isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}" style="${isFav ? 'color:#e63946;' : ''}"></i>`;
+  favBtn.onclick = () => {
+    toggleWishlist(prod.id);
+    const updatedFav = wishlist.some(item => item.id === prod.id);
+    favBtn.innerHTML = `<i class="${updatedFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}" style="${updatedFav ? 'color:#e63946;' : ''}"></i>`;
+  };
+
+  // Səbətə əlavə et düyməsi
+  const addBtn = document.getElementById('modalAddToCartBtn');
+  addBtn.onclick = () => {
+    addToCart(prod.id, currentDetailQty);
+    closeProductModal();
+  };
+
+  document.getElementById('productDetailModal').classList.add('active');
+};
+
+window.closeProductModal = function() {
+  const modal = document.getElementById('productDetailModal');
+  if (modal) modal.classList.remove('active');
+};
+
+window.changeDetailQty = function(delta) {
+  currentDetailQty = Math.max(1, currentDetailQty + delta);
+  document.getElementById('detailQty').textContent = currentDetailQty;
+};
+
+// ----------------------------------------------------
+// 3. SƏBƏT (CART) İDARƏETMƏSİ
+// ----------------------------------------------------
+function initCartAndWishlistUI() {
+  // Səbəti Aç / Bağla
+  const openCartBtn = document.getElementById('openCartBtn');
+  const cartDrawerBackdrop = document.getElementById('cartDrawerBackdrop');
+  if (openCartBtn) openCartBtn.addEventListener('click', openCartDrawer);
+  if (cartDrawerBackdrop) {
+    cartDrawerBackdrop.addEventListener('click', (e) => {
+      if (e.target === cartDrawerBackdrop) closeCartDrawer();
+    });
+  }
+
+  // Sevimliləri Aç / Bağla
+  const openWishlistBtn = document.getElementById('openWishlistBtn');
+  const wishlistModal = document.getElementById('wishlistModal');
+  if (openWishlistBtn) openWishlistBtn.addEventListener('click', openWishlistModal);
+  if (wishlistModal) {
+    wishlistModal.addEventListener('click', (e) => {
+      if (e.target === wishlistModal) closeWishlistModal();
+    });
+  }
+}
+
+window.openCartDrawer = function() {
+  renderCartDrawer();
+  document.getElementById('cartDrawerBackdrop').classList.add('active');
+};
+
+window.closeCartDrawer = function() {
+  document.getElementById('cartDrawerBackdrop').classList.remove('active');
+};
+
+window.addToCart = function(productId, qty = 1) {
+  const prod = productsList.find(p => p.id === productId);
+  if (!prod) return;
+
+  const existing = cart.find(item => item.id === prod.id);
+  if (existing) {
+    existing.qty += qty;
+  } else {
+    cart.push({
+      id: prod.id,
+      name: prod.name,
+      price: prod.price,
+      imageUrl: prod.imageUrl,
+      qty: qty
+    });
+  }
+
+  saveCart();
+  updateBadgeCounts();
+  showToast(`"${prod.name}" səbətə əlavə edildi!`);
+  openCartDrawer();
+};
+
+window.updateCartQty = function(productId, delta) {
+  const item = cart.find(i => i.id === productId);
+  if (!item) return;
+
+  item.qty += delta;
+  if (item.qty <= 0) {
+    cart = cart.filter(i => i.id !== productId);
+  }
+
+  saveCart();
+  updateBadgeCounts();
+  renderCartDrawer();
+};
+
+window.removeFromCart = function(productId) {
+  cart = cart.filter(i => i.id !== productId);
+  saveCart();
+  updateBadgeCounts();
+  renderCartDrawer();
+  showToast('Məhsul səbətdən çıxarıldı.');
+};
+
+function saveCart() {
+  localStorage.setItem('sweet_bakery_cart', JSON.stringify(cart));
+}
+
+function renderCartDrawer() {
+  const container = document.getElementById('cartItemsContainer');
+  const totalEl = document.getElementById('cartTotalPrice');
+  const waBtn = document.getElementById('cartWhatsAppOrderBtn');
+  if (!container) return;
+
+  if (cart.length === 0) {
+    container.innerHTML = `
+      <div class="cart-empty-box">
+        <i class="fa-solid fa-basket-shopping"></i>
+        <h4>Səbətiniz boşdur</h4>
+        <p style="font-size:0.85rem; margin-top:0.4rem;">Ləzzətli tortlarımızdan seçib səbətə əlavə edin.</p>
+      </div>
+    `;
+    totalEl.textContent = '0 AZN';
+    waBtn.style.display = 'none';
+    return;
+  }
+
+  waBtn.style.display = 'flex';
+  container.innerHTML = '';
+  let subtotal = 0;
+  let orderSummaryText = 'Salam Sweet Bakery! Səbətimdəki tortları sifariş vermək istəyirəm:%0A%0A';
+
+  cart.forEach(item => {
+    const itemTotal = item.price * item.qty;
+    subtotal += itemTotal;
+    orderSummaryText += `🍰 *${item.name}* — ${item.qty} ədəd (${itemTotal} AZN)%0A`;
+
+    const row = document.createElement('div');
+    row.className = 'cart-item-card';
+    row.innerHTML = `
+      <img src="${item.imageUrl}" class="cart-item-img" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=100&q=80'" />
+      <div class="cart-item-info">
+        <h4>${item.name}</h4>
+        <div class="item-unit-price">${item.price} AZN / ədəd</div>
+        <div class="cart-item-ctrl">
+          <button onclick="updateCartQty('${item.id}', -1)">-</button>
+          <span style="font-size:0.85rem; font-weight:700; min-width:20px; text-align:center;">${item.qty}</span>
+          <button onclick="updateCartQty('${item.id}', 1)">+</button>
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <div style="font-weight:700; color:var(--dusty-rose); font-size:1rem; margin-bottom:0.4rem;">${itemTotal} AZN</div>
+        <button onclick="removeFromCart('${item.id}')" style="background:none; border:none; color:#c5221f; cursor:pointer;" title="Sil">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+
+  orderSummaryText += `%0A💰 *Ümumi Məbləğ:* ${subtotal} AZN%0AZəhmət olmasa sifarişi qəbul edəsiniz.`;
+  totalEl.textContent = `${subtotal} AZN`;
+  waBtn.href = `https://wa.me/994501234567?text=${orderSummaryText}`;
+}
+
+// ----------------------------------------------------
+// 4. SEVİMLİLƏR (WISHLIST) İDARƏETMƏSİ
+// ----------------------------------------------------
+window.toggleWishlist = function(productId, event) {
+  if (event) event.stopPropagation();
+
+  const prod = productsList.find(p => p.id === productId);
+  if (!prod) return;
+
+  const index = wishlist.findIndex(item => item.id === prod.id);
+  if (index > -1) {
+    wishlist.splice(index, 1);
+    showToast(`"${prod.name}" favorilərdən çıxarıldı.`);
+  } else {
+    wishlist.push({
+      id: prod.id,
+      name: prod.name,
+      price: prod.price,
+      imageUrl: prod.imageUrl,
+      categoryName: prod.categoryName
+    });
+    showToast(`"${prod.name}" favorilərə əlavə edildi! ❤️`);
+  }
+
+  localStorage.setItem('sweet_bakery_wishlist', JSON.stringify(wishlist));
+  updateBadgeCounts();
+  renderProducts();
+  renderWishlistModal();
+};
+
+window.openWishlistModal = function() {
+  renderWishlistModal();
+  document.getElementById('wishlistModal').classList.add('active');
+};
+
+window.closeWishlistModal = function() {
+  document.getElementById('wishlistModal').classList.remove('active');
+};
+
+function renderWishlistModal() {
+  const container = document.getElementById('wishlistContainer');
+  if (!container) return;
+
+  if (wishlist.length === 0) {
+    container.innerHTML = `
+      <div style="text-align:center; padding: 3rem 1rem; color:var(--choco-muted);">
+        <i class="fa-regular fa-heart" style="font-size:2.5rem; color:var(--dusty-rose); margin-bottom:0.8rem;"></i>
+        <p>Hələ heç bir tortu sevimlilərə əlavə etməmisiniz.</p>
+      </div>
+    `;
+    return;
+  }
+
+  container.innerHTML = '';
+  wishlist.forEach(item => {
+    const row = document.createElement('div');
+    row.className = 'cart-item-card';
+    row.innerHTML = `
+      <img src="${item.imageUrl}" class="cart-item-img" />
+      <div class="cart-item-info">
+        <h4>${item.name}</h4>
+        <div style="font-weight:700; color:var(--dusty-rose);">${item.price} AZN</div>
+      </div>
+      <div style="display:flex; gap:0.5rem; align-items:center;">
+        <button onclick="addToCart('${item.id}', 1); closeWishlistModal();" class="btn-order" style="border:none; cursor:pointer; font-size:0.8rem; padding:0.4rem 0.8rem;">
+          <i class="fa-solid fa-basket-shopping"></i> Səbətə At
+        </button>
+        <button onclick="toggleWishlist('${item.id}')" style="background:none; border:none; color:#c5221f; cursor:pointer; padding:0.4rem;" title="Sil">
+          <i class="fa-solid fa-trash-can"></i>
+        </button>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+}
+
+function updateBadgeCounts() {
+  const cartBadge = document.getElementById('cartCount');
+  const wishBadge = document.getElementById('wishlistCount');
+
+  const totalCartItems = cart.reduce((acc, item) => acc + item.qty, 0);
+  if (cartBadge) cartBadge.textContent = totalCartItems;
+  if (wishBadge) wishBadge.textContent = wishlist.length;
+}
+
+// ----------------------------------------------------
+// 5. Vahid Giriş / Qeydiyyat və İstifadəçi Təhlili (Auth)
 // ----------------------------------------------------
 function initAuthUI() {
   const modal = document.getElementById('authModal');
@@ -247,39 +546,22 @@ function initAuthUI() {
   const loginForm = document.getElementById('userLoginForm');
   const registerForm = document.getElementById('userRegisterForm');
 
-  // Modalı Açmaq
-  if (openBtn) {
-    openBtn.addEventListener('click', () => openAuthModal('login'));
-  }
-
-  // Modalı Bağlamaq
-  if (closeBtn) {
-    closeBtn.addEventListener('click', closeAuthModal);
-  }
-
+  if (openBtn) openBtn.addEventListener('click', () => openAuthModal('login'));
+  if (closeBtn) closeBtn.addEventListener('click', closeAuthModal);
   if (modal) {
     modal.addEventListener('click', (e) => {
       if (e.target === modal) closeAuthModal();
     });
   }
 
-  // Giriş Formu
-  if (loginForm) {
-    loginForm.addEventListener('submit', handleLogin);
-  }
+  if (loginForm) loginForm.addEventListener('submit', handleLogin);
+  if (registerForm) registerForm.addEventListener('submit', handleRegister);
 
-  // Qeydiyyat Formu
-  if (registerForm) {
-    registerForm.addEventListener('submit', handleRegister);
-  }
-
-  // Firebase İstifadəçi Vəziyyətini Dinləyir
   auth.onAuthStateChanged(async (user) => {
     updateNavbarAuthState(user);
   });
 }
 
-// Modal Aç/Bağla
 window.openAuthModal = function(tab = 'login') {
   const modal = document.getElementById('authModal');
   if (!modal) return;
@@ -293,7 +575,6 @@ window.closeAuthModal = function() {
   if (modal) modal.classList.remove('active');
 };
 
-// Tab dəyişimi: Giriş <-> Qeydiyyat
 window.switchAuthTab = function(type) {
   const loginPanel = document.getElementById('loginPanel');
   const registerPanel = document.getElementById('registerPanel');
@@ -315,7 +596,6 @@ window.switchAuthTab = function(type) {
   }
 };
 
-// Daxil Olma Əməliyyatı
 async function handleLogin(e) {
   e.preventDefault();
   const email = document.getElementById('loginEmail').value.trim();
@@ -329,7 +609,6 @@ async function handleLogin(e) {
 
     closeAuthModal();
 
-    // Əgər daxil olan şəxs Admindirsə xüsusi salamla
     if (isAdminUser(user)) {
       showToast(`Xoş gəldiniz, Admin! İdarəetmə Paneli aktivdir. 👑`);
     } else {
@@ -341,7 +620,6 @@ async function handleLogin(e) {
   }
 }
 
-// Qeydiyyat Əməliyyatı
 async function handleRegister(e) {
   e.preventDefault();
   const fullName = document.getElementById('regFullName').value.trim();
@@ -359,10 +637,8 @@ async function handleRegister(e) {
     const userCredential = await auth.createUserWithEmailAndPassword(email, pass);
     const user = userCredential.user;
 
-    // Profil adını yenilə
     await user.updateProfile({ displayName: fullName });
 
-    // Firestore-da istifadəçi qeydi yarat
     await db.collection('users').doc(user.uid).set({
       uid: user.uid,
       name: fullName,
@@ -379,13 +655,11 @@ async function handleRegister(e) {
   }
 }
 
-// Admin yoxlanışı (Email və ya xüsusi ad üzrə)
 function isAdminUser(user) {
   if (!user || !user.email) return false;
   return ADMIN_EMAILS.some(e => e.toLowerCase() === user.email.toLowerCase());
 }
 
-// Sağ üst menyu vəziyyətini yeniləyir
 function updateNavbarAuthState(user) {
   const authArea = document.getElementById('authNavZone');
   if (!authArea) return;
@@ -417,7 +691,6 @@ function updateNavbarAuthState(user) {
     });
 
   } else {
-    // Giriş edilməyibsə
     authArea.innerHTML = `
       <button id="openAuthModalBtn" class="btn-outline">
         <i class="fa-regular fa-user"></i> Daxil Ol / Qeydiyyat

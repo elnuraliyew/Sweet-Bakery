@@ -38,6 +38,18 @@
         <a href="#about">Haqqımızda</a>
         <a href="#contact">Əlaqə</a>
         
+        <!-- Favorilər (Wishlist) İkonu -->
+        <button id="openWishlistBtn" class="nav-icon-btn" title="Sevimlilər">
+          <i class="fa-regular fa-heart"></i>
+          <span class="badge-count" id="wishlistCount">0</span>
+        </button>
+
+        <!-- Səbət (Cart) İkonu -->
+        <button id="openCartBtn" class="nav-icon-btn" title="Səbət">
+          <i class="fa-solid fa-basket-shopping"></i>
+          <span class="badge-count" id="cartCount">0</span>
+        </button>
+
         <!-- Dinamik İstifadəçi / Giriş Sahəsi (Sağ üst künc) -->
         <div id="authNavZone" class="user-auth-area">
           <button id="openAuthModalBtn" class="btn-outline">
@@ -179,7 +191,95 @@
   </footer>
 
   <!-- ==============================================
-       Vahid Giriş & Qeydiyyat Pop-up (Auth Modal)
+       1. MƏHSULA TAM ŞƏKİLDƏ BAXIŞ MODALI (QUICK VIEW)
+       ============================================== -->
+  <div id="productDetailModal" class="product-modal-backdrop">
+    <div class="product-modal-box">
+      <button class="modal-close-btn" onclick="closeProductModal()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="product-modal-media">
+        <img id="detailImg" src="" alt="Tort" />
+      </div>
+
+      <div class="product-modal-content">
+        <span class="modal-cat-badge" id="detailCat">Kateqoriya</span>
+        <h2 id="detailName">Tort Adı</h2>
+        <div class="modal-price" id="detailPrice">0 AZN</div>
+        <p class="modal-desc" id="detailDesc">Tortun inqrediyentləri və təsviri...</p>
+
+        <div class="qty-control-wrap">
+          <label>Miqdar:</label>
+          <div class="qty-box">
+            <button class="qty-btn" onclick="changeDetailQty(-1)">-</button>
+            <span class="qty-val" id="detailQty">1</span>
+            <button class="qty-btn" onclick="changeDetailQty(1)">+</button>
+          </div>
+        </div>
+
+        <div class="modal-actions-grid">
+          <button id="modalAddToCartBtn" class="btn-contact" style="border: none; cursor: pointer; padding: 0.85rem; font-size: 0.95rem;">
+            <i class="fa-solid fa-basket-shopping"></i> Səbətə Əlavə Et
+          </button>
+          <button id="modalFavBtn" class="btn-outline" style="padding: 0.85rem 1.1rem;" title="Sevimlilərə at">
+            <i class="fa-regular fa-heart"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================================
+       2. SƏBƏT YAN PANELİ (CART DRAWER)
+       ============================================== -->
+  <div id="cartDrawerBackdrop" class="cart-drawer-backdrop">
+    <div class="cart-drawer">
+      <div class="cart-drawer-header">
+        <h3><i class="fa-solid fa-basket-shopping" style="color: var(--dusty-rose);"></i> Səbətiniz</h3>
+        <button class="modal-close-btn" style="position: static;" onclick="closeCartDrawer()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="cart-items-body" id="cartItemsContainer">
+        <!-- Dinamik səbət məhsulları -->
+      </div>
+
+      <div class="cart-drawer-footer">
+        <div class="cart-subtotal-row">
+          <span>Yekun Məbləğ:</span>
+          <span class="subtotal-val" id="cartTotalPrice">0 AZN</span>
+        </div>
+        <a id="cartWhatsAppOrderBtn" href="#" target="_blank" class="btn-whatsapp-checkout">
+          <i class="fa-brands fa-whatsapp"></i> Sifarişi WhatsApp ilə Göndər
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================================
+       3. SEVİMLİLƏR (WISHLIST) MODALI
+       ============================================== -->
+  <div id="wishlistModal" class="product-modal-backdrop">
+    <div class="wishlist-modal-box">
+      <button class="modal-close-btn" onclick="closeWishlistModal()">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <h3 style="font-size: 1.4rem; color: var(--choco-dark); display: flex; align-items: center; gap: 0.6rem;">
+        <i class="fa-solid fa-heart" style="color: #e63946;"></i> Sevimli Tortlarınız
+      </h3>
+      <p style="color: var(--choco-muted); font-size: 0.88rem; margin-top: 0.3rem;">Bəyəndiyiniz tortları buradan birbaşa səbətə ata bilərsiniz.</p>
+
+      <div class="wishlist-items-list" id="wishlistContainer">
+        <!-- Dinamik sevimlilər siyahısı -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ==============================================
+       4. VAHİD GİRİŞ & QEYDİYYAT POP-UP (AUTH MODAL)
        ============================================== -->
   <div id="authModal" class="auth-modal-backdrop">
     <div class="auth-modal-box">
@@ -202,7 +302,7 @@
         </button>
       </div>
 
-      <!-- 1. Daxil Ol Formu (Həm adi müştərilər, həm də Admin üçün) -->
+      <!-- 1. Daxil Ol Formu -->
       <div id="loginPanel" class="auth-form-panel active">
         <form id="userLoginForm">
           <div class="form-group" style="margin-bottom: 1rem;">
@@ -221,7 +321,7 @@
         </form>
       </div>
 
-      <!-- 2. Qeydiyyat Formu (Yalnız yeni müştərilər üçün) -->
+      <!-- 2. Qeydiyyat Formu -->
       <div id="registerPanel" class="auth-form-panel">
         <form id="userRegisterForm">
           <div class="form-group" style="margin-bottom: 0.9rem;">
@@ -245,7 +345,6 @@
         </form>
       </div>
 
-      <!-- Xəta və ya Məlumat Mesajı -->
       <div id="authStatusMsg" style="margin-top: 1rem; font-size: 0.88rem; min-height: 20px;"></div>
     </div>
   </div>

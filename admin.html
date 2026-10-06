@@ -188,7 +188,12 @@
         </div>
 
         <div class="admin-card">
-          <h2><i class="fa-solid fa-tags"></i> Mövcud Kateqoriyalar</h2>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+            <h2 style="margin-bottom: 0;"><i class="fa-solid fa-tags"></i> Mövcud Kateqoriyalar</h2>
+            <button onclick="seedDefaultCategories()" class="btn-outline" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Standart Kateqoriyaları Bərpa Et
+            </button>
+          </div>
           <div class="table-responsive">
             <table class="admin-table">
               <thead>
