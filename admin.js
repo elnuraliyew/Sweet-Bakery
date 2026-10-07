@@ -23,28 +23,30 @@ function notify(text, isError = false) {
     position: fixed;
     top: 25px;
     right: 25px;
-    background: ${isError ? '#c5221f' : '#137333'};
+    background: ${isError ? '#963F4D' : '#137333'};
     color: #fff;
-    padding: 1rem 1.6rem;
-    border-radius: 12px;
+    padding: 0.95rem 1.6rem;
+    border-radius: 14px;
     font-weight: 600;
-    font-size: 0.95rem;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    z-index: 10000;
+    font-size: 0.92rem;
+    box-shadow: 0 10px 30px rgba(48, 33, 31, 0.25);
+    z-index: 100000;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.65rem;
     animation: fadeIn 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    max-width: calc(100vw - 40px);
   `;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3500);
 }
 
-// 1. Auth Status Yoxlanışı (Giriş etməyibsə modal çıxır, adi müştəridirsə bloklanır)
+// 1. Auth Status Yoxlanışı
 auth.onAuthStateChanged(user => {
   const loginModal = document.getElementById('loginModal');
   const adminDashboard = document.getElementById('adminDashboard');
-  const userBadge = document.getElementById('userBadge');
+  const userEmailBadge = document.getElementById('userEmailBadge');
 
   if (user) {
     if (!isAdminUser(user)) {
@@ -55,7 +57,7 @@ auth.onAuthStateChanged(user => {
 
     if (loginModal) loginModal.style.display = 'none';
     if (adminDashboard) adminDashboard.style.display = 'flex';
-    if (userBadge) userBadge.innerHTML = `<i class="fa-solid fa-crown" style="color:#d4a373;"></i> ${user.email}`;
+    if (userEmailBadge) userEmailBadge.textContent = user.email;
     initAdminData();
   } else {
     if (loginModal) loginModal.style.display = 'flex';
@@ -110,7 +112,43 @@ function setupEventListeners() {
   // Şəkil faylı seçildikdə (Cihaz yaddaşından)
   const fileInput = document.getElementById('prodFileInput');
   if (fileInput) {
-    fileInput.addEventListener('change', handleFileSelect);
+    fileInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (file) processImageFile(file);
+    });
+  }
+
+  // Drag & Drop Dəstəyi
+  const dropzone = document.getElementById('uploadDropzone');
+  if (dropzone) {
+    ['dragenter', 'dragover'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.add('dragover');
+      }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+      dropzone.addEventListener(eventName, (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        dropzone.classList.remove('dragover');
+      }, false);
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        processImageFile(files[0]);
+      }
+    });
+  }
+
+  // Şəkli ləğv et / dəyiş düyməsi
+  const removeImgBtn = document.getElementById('removeImgBtn');
+  if (removeImgBtn) {
+    removeImgBtn.addEventListener('click', resetSelectedImage);
   }
 
   // Redaktəni Ləğv Et
@@ -132,26 +170,42 @@ function setupEventListeners() {
   }
 }
 
-// Şəkli cihazdan oxuyub optimallaşdıran funksiya
-async function handleFileSelect(e) {
-  const file = e.target.files[0];
-  if (!file) return;
+// Şəkli sıxıb emal edən ümumi funksiya
+async function processImageFile(file) {
+  if (!file.type.startsWith('image/')) {
+    notify('Zəhmət olmasa yalnız şəkil faylı seçin (PNG, JPG, WEBP)', true);
+    return;
+  }
 
   const previewContainer = document.getElementById('imagePreviewContainer');
   const previewImg = document.getElementById('imagePreview');
   const hiddenInput = document.getElementById('prodImageUrl');
+  const previewText = document.getElementById('imagePreviewText');
 
   try {
-    notify('Şəkil hazırlanır...');
+    notify('Şəkil cihazdan oxunur və optimallaşdırılır...');
     const compressedDataUrl = await compressImageFile(file, 900, 0.85);
     hiddenInput.value = compressedDataUrl;
     previewImg.src = compressedDataUrl;
+    if (previewText) {
+      const sizeKb = Math.round((compressedDataUrl.length * 3 / 4) / 1024);
+      previewText.textContent = `${file.name} (~${sizeKb} KB)`;
+    }
     previewContainer.style.display = 'flex';
-    notify('Şəkil uğurla yükləndi!');
+    notify('Şəkil uğurla hazırlandı!');
   } catch (err) {
     console.error(err);
     notify('Şəkli emal edərkən xəta baş verdi', true);
   }
+}
+
+function resetSelectedImage() {
+  const fileInput = document.getElementById('prodFileInput');
+  const hiddenInput = document.getElementById('prodImageUrl');
+  const previewContainer = document.getElementById('imagePreviewContainer');
+  if (fileInput) fileInput.value = '';
+  if (hiddenInput) hiddenInput.value = '';
+  if (previewContainer) previewContainer.style.display = 'none';
 }
 
 // Canvas ilə şəkli sıxmaq (Keyfiyyəti itirmədən yüngülləşdirir)
@@ -200,37 +254,56 @@ async function fetchCategories() {
     const snap = await db.collection('categories').get();
     adminCategories = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-    // Sayğacı yenilə
-    document.getElementById('totalCategoriesCount').textContent = adminCategories.length;
+    // Sayğacları yenilə
+    const countEl = document.getElementById('totalCategoriesCount');
+    if (countEl) countEl.textContent = adminCategories.length;
+    const sideCatCount = document.getElementById('sideCatCount');
+    if (sideCatCount) sideCatCount.textContent = adminCategories.length;
 
     // Select menyunu doldur
     const select = document.getElementById('prodCategory');
-    select.innerHTML = '<option value="">Kateqoriya seçin...</option>';
+    if (select) {
+      select.innerHTML = '<option value="">Kateqoriya seçin...</option>';
+      adminCategories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat.id;
+        opt.textContent = cat.name;
+        select.appendChild(opt);
+      });
+    }
 
     // Cədvəli doldur
     const tableBody = document.getElementById('categoriesTableBody');
+    if (!tableBody) return;
     tableBody.innerHTML = '';
 
     if (adminCategories.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#888;">Hələ heç bir kateqoriya yaradılmayıb.</td></tr>';
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="2">
+            <div class="empty-state-box">
+              <i class="fa-solid fa-layer-group"></i>
+              <h4>Heç bir kateqoriya yaradılmayıb</h4>
+              <p>Yuxarıdakı formadan kateqoriya əlavə edin və ya standart kateqoriyaları dərhal bərpa edin.</p>
+              <button onclick="seedDefaultCategories()" class="btn-admin-primary">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Standart Kateqoriyaları Bərpa Et
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+      return;
     }
 
     adminCategories.forEach(cat => {
-      // Option
-      const opt = document.createElement('option');
-      opt.value = cat.id;
-      opt.textContent = cat.name;
-      select.appendChild(opt);
-
-      // Row
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td style="font-weight: 600;">${cat.name}</td>
+        <td style="font-weight: 700; color: var(--text-dark);">${cat.name}</td>
         <td style="text-align: right; white-space: nowrap;">
-          <button class="action-btn action-edit" onclick="editCategory('${cat.id}', '${cat.name.replace(/'/g, "\\'")}')">
+          <button class="action-btn-pill action-edit" onclick="editCategory('${cat.id}', '${cat.name.replace(/'/g, "\\'")}')">
             <i class="fa-solid fa-pen-to-square"></i> Redaktə
           </button>
-          <button class="action-btn action-delete" onclick="deleteCategory('${cat.id}')">
+          <button class="action-btn-pill action-delete" onclick="deleteCategory('${cat.id}')">
             <i class="fa-solid fa-trash"></i> Sil
           </button>
         </td>
@@ -279,9 +352,9 @@ window.editCategory = async function(id, currentName) {
   }
 };
 
-// 8. Standart Kateqoriyaları Tətbiq Et (Şəkildəki 4 kateqoriya)
+// 8. Standart Kateqoriyaları Tətbiq Et
 window.seedDefaultCategories = async function() {
-  if (!confirm('Standart kateqoriyalar (Şokoladlı, Meyvəli, Toy & Nişan, Bento) bazaya əlavə edilsin?')) return;
+  if (!confirm('Standart kateqoriyalar (Şokoladlı, Ad günü, Nişan və toy, Fərdi dizaynlı) əlavə edilsin?')) return;
   const DEFAULT_CATS = [
     'Şokoladlı tortlar',
     'Ad günü tortları',
@@ -327,35 +400,54 @@ async function fetchProducts() {
     const snap = await db.collection('products').get();
     adminProducts = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
-    // Sayğacı yenilə
-    document.getElementById('totalProductsCount').textContent = adminProducts.length;
+    // Sayğacları yenilə
+    const countEl = document.getElementById('totalProductsCount');
+    if (countEl) countEl.textContent = adminProducts.length;
+    const sideProdCount = document.getElementById('sideProdCount');
+    if (sideProdCount) sideProdCount.textContent = adminProducts.length;
+    const tableBadge = document.getElementById('tableProductsCountBadge');
+    if (tableBadge) tableBadge.textContent = adminProducts.length;
 
     const tableBody = document.getElementById('productsTableBody');
+    if (!tableBody) return;
     tableBody.innerHTML = '';
 
     if (adminProducts.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#888; padding: 2rem;">Kataloqda hələ tort yoxdur. Yuxarıdakı formadan əlavə edin.</td></tr>';
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="6">
+            <div class="empty-state-box">
+              <i class="fa-solid fa-cake-candles"></i>
+              <h4>Kataloqda hələ heç bir tort yoxdur</h4>
+              <p>Yuxarıdakı formanı dolduraraq ilk tortunuzu əlavə edin. Şəkli birbaşa cihazınızdan seçə bilərsiniz.</p>
+              <button onclick="focusProductForm()" class="btn-admin-primary">
+                <i class="fa-solid fa-plus"></i> İlk Tortu Əlavə Et
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
       return;
     }
 
     adminProducts.forEach(prod => {
       const cat = adminCategories.find(c => c.id === prod.categoryId);
-      const catName = cat ? cat.name : 'Təyin edilməyib';
+      const catName = cat ? cat.name : 'Eksklüziv';
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>
-          <img src="${prod.imageUrl}" class="table-img" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=100&q=80'" />
+          <img src="${prod.imageUrl}" class="table-cake-img" alt="${prod.name}" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=120&q=80'" />
         </td>
-        <td style="font-weight: 700; color: var(--choco-dark);">${prod.name}</td>
-        <td><span style="background: var(--soft-rose); color: var(--dusty-rose); padding: 0.25rem 0.7rem; border-radius: 999px; font-size: 0.8rem; font-weight: 600;">${catName}</span></td>
-        <td style="font-weight: 700; color: var(--dusty-rose);">${prod.price} AZN / kq</td>
-        <td style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--choco-muted); font-size: 0.85rem;">${prod.description}</td>
+        <td style="font-weight: 700; color: var(--text-dark);">${prod.name}</td>
+        <td><span class="category-badge-pill">${catName}</span></td>
+        <td><span class="price-badge-bold">${prod.price} <span>AZN / kq</span></span></td>
+        <td style="max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); font-size: 0.85rem;" title="${prod.description}">${prod.description}</td>
         <td style="text-align: right; white-space: nowrap;">
-          <button class="action-btn action-edit" onclick="startEditProduct('${prod.id}')">
+          <button class="action-btn-pill action-edit" onclick="startEditProduct('${prod.id}')">
             <i class="fa-solid fa-pen-to-square"></i> Redaktə
           </button>
-          <button class="action-btn action-delete" onclick="deleteProduct('${prod.id}')">
+          <button class="action-btn-pill action-delete" onclick="deleteProduct('${prod.id}')">
             <i class="fa-solid fa-trash"></i> Sil
           </button>
         </td>
@@ -396,7 +488,7 @@ async function handleProductSubmit(e) {
   };
 
   try {
-    notify('Məlumatlar bazada saxlanılır...');
+    notify('Məlumatlar saxlanılır...');
     if (editId) {
       await db.collection('products').doc(editId).update(productData);
       notify(`"${name}" uğurla yeniləndi!`);
@@ -420,6 +512,8 @@ window.startEditProduct = function(id) {
   const prod = adminProducts.find(p => p.id === id);
   if (!prod) return;
 
+  switchTab('productsTab');
+
   document.getElementById('editProdId').value = prod.id;
   document.getElementById('prodName').value = prod.name;
   document.getElementById('prodPrice').value = prod.price;
@@ -431,15 +525,17 @@ window.startEditProduct = function(id) {
   if (prod.imageUrl) {
     const previewContainer = document.getElementById('imagePreviewContainer');
     const previewImg = document.getElementById('imagePreview');
+    const previewText = document.getElementById('imagePreviewText');
     previewImg.src = prod.imageUrl;
+    if (previewText) previewText.textContent = 'Mövcud şəkil saxlanıldı';
     previewContainer.style.display = 'flex';
   }
 
   document.getElementById('productFormTitle').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Tortu Redaktə Et';
   document.getElementById('submitProdBtn').innerHTML = '<i class="fa-solid fa-check"></i> Yenilə';
-  document.getElementById('cancelProdEditBtn').style.display = 'inline-block';
+  document.getElementById('cancelProdEditBtn').style.display = 'inline-flex';
 
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  focusProductForm();
 };
 
 // 13. Redaktəni Ləğv Et
@@ -453,7 +549,7 @@ function resetProductForm() {
   document.getElementById('cancelProdEditBtn').style.display = 'none';
 }
 
-// 12. Tortu Sil
+// 14. Tortu Sil
 window.deleteProduct = async function(id) {
   if (!confirm('Bu tortu birdəfəlik silmək istədiyinizdən əminsiniz?')) return;
   try {
@@ -466,45 +562,81 @@ window.deleteProduct = async function(id) {
   }
 };
 
-// 13. Tab Keçidləri (Tortlar <-> Kateqoriyalar <-> Dadlar)
+// 15. Tab Keçidləri
 window.switchTab = function(tabId) {
   document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
   const target = document.getElementById(tabId);
   if (target) target.style.display = 'block';
 
   document.querySelectorAll('.admin-nav-item').forEach(btn => btn.classList.remove('active'));
-  if (event && event.currentTarget) {
-    event.currentTarget.classList.add('active');
+  const activeBtn = document.querySelector(`.admin-nav-item[onclick*="${tabId}"]`);
+  if (activeBtn) activeBtn.classList.add('active');
+
+  const desc = document.getElementById('adminHeaderDesc');
+  if (desc) {
+    if (tabId === 'productsTab') desc.textContent = 'Məhsul kataloqu, qiymətlər və tortlar üzərində tam nəzarət';
+    else if (tabId === 'categoriesTab') desc.textContent = 'Tortların çeşidlənməsi üçün kateqoriya qrupları';
+    else if (tabId === 'flavorsTab') desc.textContent = 'Müştərilərin fərdi sifarişdə seçə biləcəyi dad və krem seçimləri';
   }
 };
 
-// 14. Dadları Gətir & Render Et
+// 16. Formaya Fokuslanmaq
+window.focusProductForm = function() {
+  switchTab('productsTab');
+  const card = document.getElementById('productFormCard');
+  if (card) {
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => {
+      document.getElementById('prodName')?.focus();
+    }, 400);
+  }
+};
+
+// 17. Dadları Gətir & Render Et
 async function fetchFlavors() {
+  const alertBanner = document.getElementById('rulesAlertBanner');
   try {
     const snap = await db.collection('flavors').get();
     adminFlavors = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+    if (alertBanner) alertBanner.style.display = 'none';
+
     const countEl = document.getElementById('totalFlavorsCount');
     if (countEl) countEl.textContent = adminFlavors.length;
+    const sideFlvCount = document.getElementById('sideFlvCount');
+    if (sideFlvCount) sideFlvCount.textContent = adminFlavors.length;
 
     const tableBody = document.getElementById('flavorsTableBody');
     if (!tableBody) return;
     tableBody.innerHTML = '';
 
     if (adminFlavors.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#888; padding: 2rem;">Hələ heç bir dad əlavə edilməyib. Yuxarıdakı formadan əlavə edin və ya standart dadları bərpa edin.</td></tr>';
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="2">
+            <div class="empty-state-box">
+              <i class="fa-solid fa-ice-cream"></i>
+              <h4>Hələ heç bir dad əlavə edilməyib</h4>
+              <p>Müştəriləriniz üçün standart patisserie dadlarını (Şokoladlı, Qırmızı Məxmər, Püstəli və s.) bir kliklə bərpa edin.</p>
+              <button onclick="seedDefaultFlavors()" class="btn-admin-primary">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Standart Dadları Bərpa Et
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
       return;
     }
 
     adminFlavors.forEach(flavor => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td style="font-weight: 600; color: var(--choco-dark);">${flavor.name}</td>
+        <td style="font-weight: 700; color: var(--text-dark);">${flavor.name}</td>
         <td style="text-align: right; white-space: nowrap;">
-          <button class="action-btn action-edit" onclick="editFlavor('${flavor.id}', '${flavor.name.replace(/'/g, "\\'")}')">
+          <button class="action-btn-pill action-edit" onclick="editFlavor('${flavor.id}', '${flavor.name.replace(/'/g, "\\'")}')">
             <i class="fa-solid fa-pen-to-square"></i> Redaktə
           </button>
-          <button class="action-btn action-delete" onclick="deleteFlavor('${flavor.id}')">
+          <button class="action-btn-pill action-delete" onclick="deleteFlavor('${flavor.id}')">
             <i class="fa-solid fa-trash"></i> Sil
           </button>
         </td>
@@ -512,12 +644,17 @@ async function fetchFlavors() {
       tableBody.appendChild(tr);
     });
   } catch (err) {
-    console.error(err);
-    notify('Dadları yükləyərkən xəta baş verdi', true);
+    console.error('fetchFlavors error:', err);
+    if (alertBanner) alertBanner.style.display = 'flex';
+    if (err.code === 'permission-denied') {
+      notify('Firestore qaydaları yenilənməlidir! Firebase Console-da qaydaları təsdiqləyin.', true);
+    } else {
+      notify('Dadları yükləyərkən xəta: ' + (err.message || 'Baza xətası'), true);
+    }
   }
 }
 
-// 15. Dad Əlavə Et
+// 18. Dad Əlavə Et
 async function handleFlavorSubmit(e) {
   e.preventDefault();
   const input = document.getElementById('newFlavorName');
@@ -535,7 +672,7 @@ async function handleFlavorSubmit(e) {
   }
 }
 
-// 16. Dadı Redaktə Et
+// 19. Dadı Redaktə Et
 window.editFlavor = async function(id, currentName) {
   const newName = prompt('Dadın yeni adını daxil edin:', currentName);
   if (!newName || newName.trim() === '' || newName.trim() === currentName) return;
@@ -550,7 +687,7 @@ window.editFlavor = async function(id, currentName) {
   }
 };
 
-// 17. Dadı Sil
+// 20. Dadı Sil
 window.deleteFlavor = async function(id) {
   if (!confirm('Bu dadı silmək istəyirsiniz?')) return;
   try {
@@ -563,7 +700,7 @@ window.deleteFlavor = async function(id) {
   }
 };
 
-// 18. Standart Dadları Bərpa Et
+// 21. Standart Dadları Bərpa Et
 window.seedDefaultFlavors = async function() {
   if (!confirm('Standart dadlar bazaya əlavə edilsin?')) return;
   const DEFAULT_FLAVORS = [
@@ -593,3 +730,12 @@ window.seedDefaultFlavors = async function() {
   }
 };
 
+// 22. Firestore Qaydalarını Kopyalama Köməkçisi
+window.copyFirestoreRulesPrompt = function() {
+  const rulesCode = `rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read: if true;\n      allow write: if request.auth != null;\n    }\n  }\n}`;
+  navigator.clipboard.writeText(rulesCode).then(() => {
+    alert('Firestore Qaydaları kopyalandı!\\n\\nFirebase Console -> Firestore Database -> Rules bölməsinə keçib yapışdırın və "Publish" vurun.');
+  }).catch(() => {
+    prompt('Firestore Qaydalarını kopyalayın və Firebase Console-da yapışdırın:', rulesCode);
+  });
+};
