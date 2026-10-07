@@ -162,17 +162,8 @@ async function loadCategories() {
   try {
     const snapshot = await db.collection('categories').get();
     
-    // Əgər bazada kateqoriya yoxdursa və ya boşdursa, 4 rəsmi kateqoriyanı avtomatik yaradırıq
     if (snapshot.empty) {
-      const batch = db.batch();
-      const createdCats = [];
-      for (const catName of DEFAULT_CATEGORIES) {
-        const docRef = db.collection('categories').doc();
-        batch.set(docRef, { name: catName, createdAt: new Date() });
-        createdCats.push({ id: docRef.id, name: catName });
-      }
-      await batch.commit();
-      categoriesList = createdCats;
+      categoriesList = [];
     } else {
       categoriesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
@@ -180,8 +171,8 @@ async function loadCategories() {
     renderCategoryPills();
 
   } catch (error) {
-    console.warn('Kateqoriya yüklənməsi xətası (yerli kateqoriyalardan istifadə edilir):', error);
-    categoriesList = DEFAULT_CATEGORIES.map((name, i) => ({ id: `cat-${i}`, name }));
+    console.warn('Kateqoriya yüklənməsi xətası:', error);
+    categoriesList = [];
     renderCategoryPills();
   }
 }
@@ -237,32 +228,30 @@ async function loadFlavors() {
   try {
     const snapshot = await db.collection('flavors').get();
     if (snapshot.empty) {
-      // Əgər bazada dad yoxdursa, standart dadları bazaya qeyd edirik
-      const batch = db.batch();
-      const createdFlavors = [];
-      for (const fName of DEFAULT_FLAVORS) {
-        const docRef = db.collection('flavors').doc();
-        batch.set(docRef, { name: fName, createdAt: new Date() });
-        createdFlavors.push({ id: docRef.id, name: fName });
-      }
-      await batch.commit();
-      flavorsList = createdFlavors;
+      flavorsList = [];
     } else {
       flavorsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
   } catch (err) {
-    console.warn('Dadların yüklənməsi xətası (yerli standart dadlardan istifadə edilir):', err);
-    flavorsList = DEFAULT_FLAVORS.map((name, i) => ({ id: `flv-${i}`, name }));
+    console.warn('Dadların yüklənməsi xətası:', err);
+    flavorsList = [];
   }
 
   // Dad seçim xanasını (select) dinamik doldururuq
   select.innerHTML = '<option value="">Dad və krem seçin...</option>';
-  flavorsList.forEach(f => {
+  if (flavorsList.length === 0) {
     const opt = document.createElement('option');
-    opt.value = f.name;
-    opt.textContent = f.name;
+    opt.value = 'Klassik Krem';
+    opt.textContent = 'Klassik Krem (Standart)';
     select.appendChild(opt);
-  });
+  } else {
+    flavorsList.forEach(f => {
+      const opt = document.createElement('option');
+      opt.value = f.name;
+      opt.textContent = f.name;
+      select.appendChild(opt);
+    });
+  }
 }
 
 async function loadProducts() {
@@ -273,94 +262,7 @@ async function loadProducts() {
     const snapshot = await db.collection('products').get();
 
     if (snapshot.empty) {
-      // Əgər bazada hələ tort yoxdursa, 4 kateqoriyaya tam uyğun premium demo məhsullar
-      const chocCat = categoriesList.find(c => c.name.includes('Şokoladlı')) || { id: 'c-choc', name: 'Şokoladlı tortlar' };
-      const bdayCat = categoriesList.find(c => c.name.includes('Ad günü')) || { id: 'c-bday', name: 'Ad günü tortları' };
-      const wedCat = categoriesList.find(c => c.name.includes('Nişan') || c.name.includes('toy')) || { id: 'c-wed', name: 'Nişan və toy tortları' };
-      const customCat = categoriesList.find(c => c.name.includes('Fərdi')) || { id: 'c-custom', name: 'Fərdi dizaynlı tortlar' };
-
-      productsList = [
-        {
-          id: 'cake-1',
-          code: 'SB-101',
-          name: 'Klassik Şokoladlı Zəriflik',
-          description: 'Zərif südlü şokolad, qozlu biskvit və krem qanaş.',
-          price: 24,
-          imageUrl: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80',
-          categoryId: chocCat.id,
-          categoryName: chocCat.name
-        },
-        {
-          id: 'cake-2',
-          code: 'SB-102',
-          name: 'Qırmızı Meyvəli & Moruqlu',
-          description: 'Klassik Red Velvet biskviti, maskarpone pendirli krem və təbii təzə moruq.',
-          price: 26,
-          imageUrl: 'https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?auto=format&fit=crop&w=800&q=80',
-          categoryId: bdayCat.id,
-          categoryName: bdayCat.name
-        },
-        {
-          id: 'cake-3',
-          code: 'SB-103',
-          name: 'Vanil Ətirli Bento Zəriflik',
-          description: 'Fərdi miniatür ad günü tortu, vanilli yüngül muss və giləmeyvələr.',
-          price: 18,
-          imageUrl: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=800&q=80',
-          categoryId: bdayCat.id,
-          categoryName: bdayCat.name
-        },
-        {
-          id: 'cake-4',
-          code: 'SB-104',
-          name: 'Pastel Gül Ləçəkli Toy Tortu',
-          description: '2 mərtəbəli, təbii qızılı vərəq və canlı pastel güllərlə bəzədilmiş xüsusi gün şedevri.',
-          price: 32,
-          imageUrl: 'https://images.unsplash.com/photo-1535254973040-607b474cb50d?auto=format&fit=crop&w=800&q=80',
-          categoryId: wedCat.id,
-          categoryName: wedCat.name
-        },
-        {
-          id: 'cake-5',
-          code: 'SB-105',
-          name: 'Çəhrayı Kremli Zərif Dizayn',
-          description: 'Zərif çəhrayı krem qatları, moruq konfiti və xırtıldayan ağ şokolad layları.',
-          price: 25,
-          imageUrl: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=80',
-          categoryId: customCat.id,
-          categoryName: customCat.name
-        },
-        {
-          id: 'cake-6',
-          code: 'SB-106',
-          name: 'Fındıqlı Şokolad & Truffel',
-          description: 'Qovrulmuş meşə fındığı, duzlu karamel qatı və xalis qara şokoladlı muss.',
-          price: 28,
-          imageUrl: 'https://images.unsplash.com/photo-1549576490-b0b4831ef60a?auto=format&fit=crop&w=800&q=80',
-          categoryId: chocCat.id,
-          categoryName: chocCat.name
-        },
-        {
-          id: 'cake-7',
-          code: 'SB-107',
-          name: 'Kraliça Zümrüd Nişan Tortu',
-          description: 'Zərif məxmər teksturalı, mirvari bəzəklər və fərdi xəttatlıq yazısı ilə bəzədilmiş nişan tortu.',
-          price: 35,
-          imageUrl: 'https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?auto=format&fit=crop&w=800&q=80',
-          categoryId: wedCat.id,
-          categoryName: wedCat.name
-        },
-        {
-          id: 'cake-8',
-          code: 'SB-108',
-          name: 'Fərdi Tematik Uşaq Tortu',
-          description: 'Uşaq ad günləri üçün sevimli personajlar, zərərsiz təbii rənglər və meyvəli biskvit.',
-          price: 22,
-          imageUrl: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&w=800&q=80',
-          categoryId: customCat.id,
-          categoryName: customCat.name
-        }
-      ];
+      productsList = [];
     } else {
       productsList = snapshot.docs.map(doc => {
         const data = doc.data();
@@ -402,6 +304,24 @@ function renderProducts() {
   const grid = document.getElementById('productContainer');
   if (!grid) return;
 
+  if (productsList.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 4.5rem 1.5rem; background: var(--white); border-radius: var(--radius-lg); border: 1.5px dashed var(--border-warm); margin: 2rem 0; box-shadow: var(--shadow-subtle);">
+        <div style="width: 70px; height: 70px; margin: 0 auto 1.2rem auto; border-radius: 50%; background: var(--soft-pink); display: flex; align-items: center; justify-content: center; color: var(--primary-burgundy); font-size: 2rem;">
+          <i class="fa-solid fa-cake-candles"></i>
+        </div>
+        <h3 style="font-family: var(--font-serif); font-size: 1.5rem; color: var(--text-dark); margin-bottom: 0.6rem;">Kataloq Hazırlanır</h3>
+        <p style="color: var(--text-muted); max-width: 480px; margin: 0 auto 1.5rem auto; font-size: 0.95rem; line-height: 1.6;">
+          Yeni və eksklüziv tort çeşidlərimiz admin paneli vasitəsilə əlavə olunur. İstədiyiniz dizaynda fərdi tort sifarişi vermək üçün dərhal bizimlə əlaqə saxlaya bilərsiniz!
+        </p>
+        <a href="#custom-order" class="btn-primary-burgundy" style="display: inline-flex; align-items: center; gap: 0.6rem; text-decoration: none; padding: 0.85rem 1.8rem;">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Fərdi Tort Sifarişi Ver
+        </a>
+      </div>
+    `;
+    return;
+  }
+
   const filtered = currentCategory === 'all' 
     ? productsList 
     : productsList.filter(p => p.categoryId === currentCategory);
@@ -419,8 +339,6 @@ function renderProducts() {
   grid.innerHTML = '';
 
   filtered.forEach((prod, index) => {
-    const isFav = wishlist.some(item => item.id === prod.id);
-    const prodCode = prod.code || getProductCode(prod);
     const card = document.createElement('div');
     card.className = 'product-card';
     card.dataset.id = prod.id;
@@ -428,24 +346,15 @@ function renderProducts() {
     card.innerHTML = `
       <div class="card-image-box" onclick="openProductDetail('${escapeHtml(prod.id)}')">
         <img src="${escapeHtml(prod.imageUrl)}" alt="${escapeHtml(prod.name)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80'" />
-        <span class="card-category-badge">${escapeHtml(prod.categoryName || 'Eksklüziv')}</span>
-        <button class="card-fav-btn ${isFav ? 'active' : ''}" onclick="toggleWishlist('${escapeHtml(prod.id)}', event)" title="İstək siyahısına əlavə et" aria-label="Sevimlilər">
-          <i class="${isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}"></i>
-        </button>
-        <button class="card-share-btn" onclick="shareProduct('${escapeHtml(prod.id)}', event)" title="Məhsulu Paylaş" aria-label="Paylaş">
-          <i class="fa-solid fa-share-nodes"></i>
-        </button>
+        <span class="card-category-badge">${escapeHtml(prod.categoryName || 'Tort')}</span>
       </div>
       <div class="card-content">
-        <div class="card-meta-line">
-          <span class="card-code-pill"><i class="fa-solid fa-barcode"></i> Kod: ${escapeHtml(prodCode)}</span>
-        </div>
         <h3 onclick="openProductDetail('${escapeHtml(prod.id)}')">${escapeHtml(prod.name)}</h3>
-        <p onclick="openProductDetail('${escapeHtml(prod.id)}')">${escapeHtml(prod.description)}</p>
+        <p onclick="openProductDetail('${escapeHtml(prod.id)}')">${escapeHtml(prod.description || '')}</p>
         <div class="card-footer-row">
           <div class="card-price-tag">${Number(prod.price) || 0} <span>AZN / kq</span></div>
-          <button onclick="addToCart('${escapeHtml(prod.id)}', 1)" class="btn-card-order" title="Səbətə at">
-            <i class="fa-solid fa-basket-shopping"></i> Sifariş et
+          <button onclick="openProductDetail('${escapeHtml(prod.id)}')" class="btn-card-order" title="Məhsula bax və sifariş et">
+            <i class="fa-solid fa-eye"></i> Baxış & Sifariş
           </button>
         </div>
       </div>

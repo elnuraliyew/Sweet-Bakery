@@ -1156,3 +1156,52 @@ service cloud.firestore {
     prompt('Firestore Qaydalarını kopyalayın və Firebase Console-da yapışdırın:', rulesCode);
   });
 };
+
+// 23. Bütün Test Məlumatlarını Birdəfəlik Təmizlə (Baza Sıfırlama)
+window.clearAllTestData = async function() {
+  const confirmed = confirm(
+    "DİQQƏT: Test Məlumatlarını Təmizləmək\n\n" +
+    "Bazadakı bütün test kateqoriyaları, dadları və məhsulları birdəfəlik silinəcək.\n" +
+    "Bundan sonra öz real kateqoriyalarınızı, dadlarınızı və tortlarınızı sıfırdan rahatlıqla əlavə edə biləcəksiniz.\n\n" +
+    "Davam etmək istəyirsiniz?"
+  );
+  if (!confirmed) return;
+
+  try {
+    notify('Test məlumatları təmizlənir, zəhmət olmasa gözləyin...');
+
+    // 1. Məhsulları sil
+    const prodSnap = await db.collection('products').get();
+    if (!prodSnap.empty) {
+      const b1 = db.batch();
+      prodSnap.docs.forEach(doc => b1.delete(doc.ref));
+      await b1.commit();
+    }
+
+    // 2. Kateqoriyaları sil
+    const catSnap = await db.collection('categories').get();
+    if (!catSnap.empty) {
+      const b2 = db.batch();
+      catSnap.docs.forEach(doc => b2.delete(doc.ref));
+      await b2.commit();
+    }
+
+    // 3. Dadları sil
+    const flvSnap = await db.collection('flavors').get();
+    if (!flvSnap.empty) {
+      const b3 = db.batch();
+      flvSnap.docs.forEach(doc => b3.delete(doc.ref));
+      await b3.commit();
+    }
+
+    // Cədvəlləri və statistikaları yenidən yenilə
+    await initAdminData();
+
+    alert('Məlumat bazası tamamilə təmizləndi!\nİndi idarəetmə panelindən öz real kateqoriyalarınızı, dadlarınızı və tortlarınızı əlavə edə bilərsiniz.');
+    notify('Bütün test məlumatları uğurla silindi! ✨');
+  } catch (error) {
+    console.error('Test məlumatlarının təmizlənməsi xətası:', error);
+    alert('Məlumatları silərkən xəta baş verdi: ' + (error.message || error));
+  }
+};
+

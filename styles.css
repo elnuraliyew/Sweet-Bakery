@@ -970,67 +970,11 @@ img {
   border: 1px solid var(--border-warm);
 }
 
-.card-fav-btn {
-  position: absolute;
-  top: 0.9rem;
-  right: 0.9rem;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(6px);
-  border: 1px solid var(--border-warm);
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  color: var(--text-muted);
-  font-size: 0.95rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: var(--transition);
-  z-index: 5;
-}
-
-.card-fav-btn:hover {
-  transform: scale(1.15);
-  color: var(--primary-burgundy);
-}
-
-.card-fav-btn.active {
-  color: #E63946;
-  background: var(--white);
-  animation: heartPop 0.3s ease;
-}
-
-.card-share-btn {
-  position: absolute;
-  top: 3.4rem;
-  right: 0.9rem;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(6px);
-  border: 1px solid var(--border-warm);
-  width: 34px;
-  height: 34px;
-  border-radius: 50%;
-  color: var(--text-muted);
-  font-size: 0.88rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: var(--transition);
-  z-index: 5;
-}
-
-.card-share-btn:hover {
-  transform: scale(1.15);
-  color: var(--primary-burgundy);
-  background: var(--white);
-}
-
-@keyframes heartPop {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.3); }
-  100% { transform: scale(1); }
+.card-fav-btn,
+.card-share-btn,
+.card-meta-line,
+.card-code-pill {
+  display: none !important;
 }
 
 .card-content {
@@ -1038,28 +982,6 @@ img {
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-}
-
-.card-meta-line {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  margin-bottom: 0.45rem;
-}
-
-.card-code-pill {
-  font-family: monospace, var(--font-sans);
-  font-size: 0.74rem;
-  font-weight: 700;
-  color: var(--primary-burgundy);
-  background: var(--soft-pink);
-  border: 1px solid var(--border-warm);
-  padding: 0.16rem 0.55rem;
-  border-radius: 6px;
-  letter-spacing: 0.04em;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.32rem;
 }
 
 .card-content h3 {
@@ -2763,6 +2685,29 @@ img {
   color: var(--primary-burgundy);
 }
 
+.btn-admin-danger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.75rem 1.4rem;
+  background: #FFF1F2;
+  color: #BE123C;
+  border: 1.5px solid #FECDD3;
+  border-radius: var(--radius-pill);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.btn-admin-danger:hover {
+  background: #FFE4E6;
+  border-color: #FDA4AF;
+  color: #9F1239;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(190, 18, 60, 0.15);
+}
+
 /* 6. Məlumat Cədvəlləri (Data Tables) */
 .table-responsive {
   overflow-x: auto;
@@ -3357,14 +3302,6 @@ img {
     left: 0.45rem;
     padding: 0.2rem 0.5rem;
     font-size: 0.65rem;
-  }
-
-  .card-fav-btn {
-    top: 0.45rem;
-    right: 0.45rem;
-    width: 30px;
-    height: 30px;
-    font-size: 0.82rem;
   }
 
   .card-content {
