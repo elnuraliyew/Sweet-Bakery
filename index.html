@@ -40,7 +40,6 @@
       <!-- Mərkəz: Əsas Menyu -->
       <nav class="header-nav" aria-label="Əsas Naviqasiya">
         <a href="#hero" class="nav-link active">Ana səhifə</a>
-        <a href="#categories" class="nav-link">Kateqoriyalar</a>
         <a href="#catalogue" class="nav-link">Tortlarımız</a>
         <a href="#custom-order" class="nav-link">Fərdi sifariş</a>
         <a href="#about" class="nav-link">Haqqımızda</a>
@@ -98,7 +97,6 @@
 
       <div class="mobile-nav-links">
         <a href="#hero" class="mobile-nav-link"><i class="fa-solid fa-house"></i> Ana səhifə</a>
-        <a href="#categories" class="mobile-nav-link"><i class="fa-solid fa-layer-group"></i> Kateqoriyalar</a>
         <a href="#catalogue" class="mobile-nav-link"><i class="fa-solid fa-cake-candles"></i> Tortlarımız</a>
         <a href="#custom-order" class="mobile-nav-link"><i class="fa-solid fa-wand-magic-sparkles"></i> Fərdi sifariş</a>
         <a href="#about" class="mobile-nav-link"><i class="fa-solid fa-heart"></i> Haqqımızda</a>
@@ -203,64 +201,6 @@
     </div>
   </section>
 
-  <!-- ==========================================================================
-       TORT KATEQORİYALARI (CATEGORY CARDS)
-       ========================================================================== -->
-  <section class="categories-section" id="categories">
-    <div class="container">
-      <div class="section-header">
-        <span class="section-tag">Kolleksiyalar</span>
-        <h2>Tortlarımız</h2>
-        <p>Hər zövqə və hər özəl ana uyğun seçimlər.</p>
-      </div>
-
-      <div class="categories-grid">
-        <!-- 1. Şokoladlı tortlar -->
-        <div class="category-card" onclick="selectCategoryByName('Şokoladlı tortlar')">
-          <div class="category-image-wrap">
-            <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=700&q=80" alt="Şokoladlı tortlar" loading="lazy" />
-          </div>
-          <div class="category-card-body">
-            <h3>Şokoladlı tortlar</h3>
-            <span class="cat-hint">Məhsullara bax <i class="fa-solid fa-arrow-right"></i></span>
-          </div>
-        </div>
-
-        <!-- 2. Ad günü tortları -->
-        <div class="category-card" onclick="selectCategoryByName('Ad günü tortları')">
-          <div class="category-image-wrap">
-            <img src="https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=700&q=80" alt="Ad günü tortları" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=700&q=80'" />
-          </div>
-          <div class="category-card-body">
-            <h3>Ad günü tortları</h3>
-            <span class="cat-hint">Məhsullara bax <i class="fa-solid fa-arrow-right"></i></span>
-          </div>
-        </div>
-
-        <!-- 3. Nişan və toy tortları -->
-        <div class="category-card" onclick="selectCategoryByName('Nişan və toy tortları')">
-          <div class="category-image-wrap">
-            <img src="https://images.unsplash.com/photo-1535254973040-607b474cb50d?auto=format&fit=crop&w=700&q=80" alt="Nişan və toy tortları" loading="lazy" />
-          </div>
-          <div class="category-card-body">
-            <h3>Nişan və toy tortları</h3>
-            <span class="cat-hint">Məhsullara bax <i class="fa-solid fa-arrow-right"></i></span>
-          </div>
-        </div>
-
-        <!-- 4. Fərdi dizaynlı tortlar -->
-        <div class="category-card" onclick="selectCategoryByName('Fərdi dizaynlı tortlar')">
-          <div class="category-image-wrap">
-            <img src="https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?auto=format&fit=crop&w=700&q=80" alt="Fərdi dizaynlı tortlar" loading="lazy" />
-          </div>
-          <div class="category-card-body">
-            <h3>Fərdi dizaynlı tortlar</h3>
-            <span class="cat-hint">Məhsullara bax <i class="fa-solid fa-arrow-right"></i></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
 
   <!-- ==========================================================================
        SEÇİLMİŞ MƏHSULLAR — E-COMMERCE KATALOQU
@@ -497,16 +437,15 @@
           <h4>Naviqasiya</h4>
           <div class="footer-links-list">
             <a href="#hero">Ana səhifə</a>
-            <a href="#categories">Kateqoriyalar</a>
             <a href="#catalogue">Tort Kataloqu</a>
             <a href="#custom-order">Fərdi Sifariş</a>
             <a href="#about">Haqqımızda</a>
           </div>
         </div>
 
-        <!-- Kateqoriyalar -->
+        <!-- Çeşidlər -->
         <div class="footer-col">
-          <h4>Kolleksiyalar</h4>
+          <h4>Tort Çeşidləri</h4>
           <div class="footer-links-list">
             <a href="#catalogue" onclick="selectCategoryByName('Şokoladlı tortlar')">Şokoladlı tortlar</a>
             <a href="#catalogue" onclick="selectCategoryByName('Ad günü tortları')">Ad günü tortları</a>
