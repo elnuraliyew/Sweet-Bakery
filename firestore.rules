@@ -279,7 +279,7 @@ service cloud.firestore {
     // 6. Default Deny for all other collections / documents
     // -----------------------------------------------------------
     match /{document=**} {
-      allow read, write: false;
+      allow read, write: if false;
     }
 
   }

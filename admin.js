@@ -1146,7 +1146,7 @@ service cloud.firestore {
     }
 
     match /{document=**} {
-      allow read, write: false;
+      allow read, write: if false;
     }
   }
 }`;
