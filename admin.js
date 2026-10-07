@@ -275,10 +275,10 @@ window.editCategory = async function(id, currentName) {
 window.seedDefaultCategories = async function() {
   if (!confirm('Standart kateqoriyalar (Şokoladlı, Meyvəli, Toy & Nişan, Bento) bazaya əlavə edilsin?')) return;
   const DEFAULT_CATS = [
-    'Şokoladlı Tortlar',
-    'Meyvəli & Giləmeyvəli',
-    'Toy & Nişan Tortları',
-    'Bento Tortlar'
+    'Şokoladlı tortlar',
+    'Ad günü tortları',
+    'Nişan və toy tortları',
+    'Fərdi dizaynlı tortlar'
   ];
 
   try {

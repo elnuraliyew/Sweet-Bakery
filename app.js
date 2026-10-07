@@ -1,4 +1,4 @@
-// app.js - Sweet Bakery Əsas Müştəri Məntiqi, Səbət, Sevimlilər və Məhsul Detalı
+// app.js - Sweet Bakery Əsas Müştəri Məntiqi, Səbət, Sevimlilər, Fərdi Sifariş və Məhsul Detalı
 
 const ADMIN_EMAILS = [
   'admin@bakery.com',
@@ -6,12 +6,12 @@ const ADMIN_EMAILS = [
   'elnuraliyew@gmail.com'
 ];
 
-// İlkin kateqoriyalar (şəkildə olanlar)
+// İlkin kateqoriyalar (Dizayn referansına uyğun 4 əsas kateqoriya)
 const DEFAULT_CATEGORIES = [
-  'Şokoladlı Tortlar',
-  'Meyvəli & Giləmeyvəli',
-  'Toy & Nişan Tortları',
-  'Bento Tortlar'
+  'Şokoladlı tortlar',
+  'Ad günü tortları',
+  'Nişan və toy tortları',
+  'Fərdi dizaynlı tortlar'
 ];
 
 let currentCategory = 'all';
@@ -24,11 +24,13 @@ let wishlist = JSON.parse(localStorage.getItem('sweet_bakery_wishlist') || '[]')
 let selectedDetailProduct = null;
 let currentDetailQty = 1;
 
-// Səhifə başladıldıqda
+// Səhifə yükləndikdə
 document.addEventListener('DOMContentLoaded', () => {
   initApp();
+  initHeaderAndMobileNav();
   initAuthUI();
   initCartAndWishlistUI();
+  initCustomOrderForm();
   updateBadgeCounts();
 });
 
@@ -40,21 +42,67 @@ function showToast(text, isError = false) {
     position: fixed;
     bottom: 25px;
     right: 25px;
-    background: ${isError ? '#c5221f' : '#137333'};
+    background: ${isError ? '#7B303C' : '#963F4D'};
     color: #fff;
-    padding: 0.9rem 1.6rem;
-    border-radius: 12px;
+    padding: 0.95rem 1.6rem;
+    border-radius: 999px;
     font-weight: 600;
-    font-size: 0.95rem;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    font-size: 0.92rem;
+    box-shadow: 0 10px 30px rgba(48, 33, 31, 0.25);
     z-index: 100000;
     display: flex;
     align-items: center;
-    gap: 0.6rem;
+    gap: 0.65rem;
     animation: fadeIn 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.2);
   `;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3500);
+}
+
+// ----------------------------------------------------
+// Header & Mobil Naviqasiya İdarəetməsi
+// ----------------------------------------------------
+function initHeaderAndMobileNav() {
+  const header = document.getElementById('siteHeader');
+  const toggleBtn = document.getElementById('mobileNavToggle');
+  const closeBtn = document.getElementById('closeMobileNavBtn');
+  const backdrop = document.getElementById('mobileNavBackdrop');
+  const mobileLinks = document.querySelectorAll('.mobile-nav-link');
+
+  // Sticky header scroll effekti
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 30) {
+      header?.classList.add('scrolled');
+    } else {
+      header?.classList.remove('scrolled');
+    }
+  });
+
+  // Mobil menyu aç/bağla
+  if (toggleBtn && backdrop) {
+    toggleBtn.addEventListener('click', () => {
+      backdrop.classList.add('active');
+    });
+  }
+
+  if (closeBtn && backdrop) {
+    closeBtn.addEventListener('click', () => {
+      backdrop.classList.remove('active');
+    });
+  }
+
+  if (backdrop) {
+    backdrop.addEventListener('click', (e) => {
+      if (e.target === backdrop) backdrop.classList.remove('active');
+    });
+  }
+
+  mobileLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      backdrop?.classList.remove('active');
+    });
+  });
 }
 
 // ----------------------------------------------------
@@ -72,7 +120,7 @@ async function loadCategories() {
   try {
     const snapshot = await db.collection('categories').get();
     
-    // Əgər bazada kateqoriya yoxdursa, şəkildəki kateqoriyaları bazaya avtomatik yazırıq
+    // Əgər bazada kateqoriya yoxdursa və ya boşdursa, 4 rəsmi kateqoriyanı avtomatik yaradırıq
     if (snapshot.empty) {
       const batch = db.batch();
       const createdCats = [];
@@ -87,29 +135,58 @@ async function loadCategories() {
       categoriesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     }
 
-    container.innerHTML = `
-      <button class="category-pill ${currentCategory === 'all' ? 'active' : ''}" data-category="all">
-        Bütün Tortlar
-      </button>
-    `;
-
-    categoriesList.forEach(cat => {
-      const btn = document.createElement('button');
-      btn.className = `category-pill ${currentCategory === cat.id ? 'active' : ''}`;
-      btn.dataset.category = cat.id;
-      btn.textContent = cat.name;
-      btn.addEventListener('click', () => filterByCategory(cat.id, btn));
-      container.appendChild(btn);
-    });
-
-    container.querySelector('[data-category="all"]').addEventListener('click', function() {
-      filterByCategory('all', this);
-    });
+    renderCategoryPills();
 
   } catch (error) {
-    console.warn('Kateqoriya yüklənməsi xətası:', error);
+    console.warn('Kateqoriya yüklənməsi xətası (yerli kateqoriyalardan istifadə edilir):', error);
+    categoriesList = DEFAULT_CATEGORIES.map((name, i) => ({ id: `cat-${i}`, name }));
+    renderCategoryPills();
   }
 }
+
+function renderCategoryPills() {
+  const container = document.getElementById('categoryContainer');
+  if (!container) return;
+
+  container.innerHTML = `
+    <button class="filter-pill ${currentCategory === 'all' ? 'active' : ''}" data-category="all">
+      Bütün Tortlar
+    </button>
+  `;
+
+  categoriesList.forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = `filter-pill ${currentCategory === cat.id ? 'active' : ''}`;
+    btn.dataset.category = cat.id;
+    btn.textContent = cat.name;
+    btn.addEventListener('click', () => filterByCategory(cat.id, btn));
+    container.appendChild(btn);
+  });
+
+  container.querySelector('[data-category="all"]').addEventListener('click', function() {
+    filterByCategory('all', this);
+  });
+}
+
+// Kateqoriya adına görə kartlardan filtrasiya (kateqoriya kartlarına klik edildikdə)
+window.selectCategoryByName = function(catName) {
+  const matched = categoriesList.find(c => c.name.toLowerCase().includes(catName.toLowerCase()) || catName.toLowerCase().includes(c.name.toLowerCase()));
+  const catId = matched ? matched.id : 'all';
+  
+  const buttons = document.querySelectorAll('.filter-pill');
+  let targetBtn = null;
+  buttons.forEach(b => {
+    if (b.dataset.category === catId) targetBtn = b;
+  });
+
+  filterByCategory(catId, targetBtn);
+
+  // Kataloqa səliqəli sürüşdürmə
+  const catEl = document.getElementById('catalogue');
+  if (catEl) {
+    catEl.scrollIntoView({ behavior: 'smooth' });
+  }
+};
 
 async function loadProducts() {
   const grid = document.getElementById('productContainer');
@@ -119,66 +196,84 @@ async function loadProducts() {
     const snapshot = await db.collection('products').get();
 
     if (snapshot.empty) {
-      // Əgər admin hələ tort əlavə etməyibsə, şəkildəki kateqoriyalara uyğun gözəl nümunələr
-      const chocCat = categoriesList.find(c => c.name.includes('Şokoladlı')) || { id: 'cat-choc', name: 'Şokoladlı Tortlar' };
-      const berryCat = categoriesList.find(c => c.name.includes('Meyvəli')) || { id: 'cat-berry', name: 'Meyvəli & Giləmeyvəli' };
-      const weddingCat = categoriesList.find(c => c.name.includes('Toy')) || { id: 'cat-wedding', name: 'Toy & Nişan Tortları' };
-      const bentoCat = categoriesList.find(c => c.name.includes('Bento')) || { id: 'cat-bento', name: 'Bento Tortlar' };
+      // Əgər bazada hələ tort yoxdursa, 4 kateqoriyaya tam uyğun premium demo məhsullar
+      const chocCat = categoriesList.find(c => c.name.includes('Şokoladlı')) || { id: 'c-choc', name: 'Şokoladlı tortlar' };
+      const bdayCat = categoriesList.find(c => c.name.includes('Ad günü')) || { id: 'c-bday', name: 'Ad günü tortları' };
+      const wedCat = categoriesList.find(c => c.name.includes('Nişan') || c.name.includes('toy')) || { id: 'c-wed', name: 'Nişan və toy tortları' };
+      const customCat = categoriesList.find(c => c.name.includes('Fərdi')) || { id: 'c-custom', name: 'Fərdi dizaynlı tortlar' };
 
       productsList = [
         {
-          id: 'demo-1',
-          name: 'Belçika Şokoladlı Zəriflik',
+          id: 'cake-1',
+          name: 'Belçika Şokoladlı Klassik',
           description: 'Həqiqi Belçika südlü şokoladı, qozlu biskvit və zərif qanaş kremi.',
-          price: 55,
+          price: 24,
           imageUrl: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80',
           categoryId: chocCat.id,
           categoryName: chocCat.name
         },
         {
-          id: 'demo-2',
-          name: 'Qırmızı Məxmər & Moruq',
+          id: 'cake-2',
+          name: 'Qırmızı Meyvəli & Moruqlu',
           description: 'Klassik Red Velvet biskviti, maskarpone pendirli krem və təbii təzə moruq.',
-          price: 60,
+          price: 26,
           imageUrl: 'https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?auto=format&fit=crop&w=800&q=80',
-          categoryId: berryCat.id,
-          categoryName: berryCat.name
+          categoryId: bdayCat.id,
+          categoryName: bdayCat.name
         },
         {
-          id: 'demo-3',
-          name: 'Kraliça Gilaslı Bento',
-          description: 'Fərdi miniatür bento tortu, yüngül vanilli mus və təzə giləmeyvələr.',
-          price: 28,
+          id: 'cake-3',
+          name: 'Vanil Ətirli Bento Zəriflik',
+          description: 'Fərdi miniatür ad günü tortu, Madagascar vanili ilə yüngül muss və giləmeyvələr.',
+          price: 18,
           imageUrl: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=800&q=80',
-          categoryId: bentoCat.id,
-          categoryName: bentoCat.name
+          categoryId: bdayCat.id,
+          categoryName: bdayCat.name
         },
         {
-          id: 'demo-4',
-          name: 'Zərif Pastel Toy Tortu',
-          description: '2 mərtəbəli, qızılı vərəq və canlı güllərlə bəzədilmiş xüsusi gün şedevri.',
-          price: 180,
+          id: 'cake-4',
+          name: 'Pastel Gül Ləçəkli Toy Tortu',
+          description: '2 mərtəbəli, təbii qızılı vərəq və canlı pastel güllərlə bəzədilmiş xüsusi gün şedevri.',
+          price: 32,
           imageUrl: 'https://images.unsplash.com/photo-1535254973040-607b474cb50d?auto=format&fit=crop&w=800&q=80',
-          categoryId: weddingCat.id,
-          categoryName: weddingCat.name
+          categoryId: wedCat.id,
+          categoryName: wedCat.name
         },
         {
-          id: 'demo-5',
-          name: 'Püstəli & Moruqlu Ekstaz',
-          description: 'Təbii Antep püstəsi pastası, moruq konfisi və xırtıldayan laylar.',
-          price: 65,
+          id: 'cake-5',
+          name: 'Çəhrayı Kremli Zərif Dizayn',
+          description: 'Zərif çəhrayı krem qatları, moruq konfiti və xırtıldayan ağ şokolad layları.',
+          price: 25,
           imageUrl: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?auto=format&fit=crop&w=800&q=80',
-          categoryId: berryCat.id,
-          categoryName: berryCat.name
+          categoryId: customCat.id,
+          categoryName: customCat.name
         },
         {
-          id: 'demo-6',
-          name: 'Karamel & Truffel Şokolad',
-          description: 'Duzlu karamel qatı, qara şokoladlı muss və truffel topları ilə.',
-          price: 58,
+          id: 'cake-6',
+          name: 'Fındıqlı Şokolad & Truffel',
+          description: 'Qovrulmuş meşə fındığı, duzlu karamel qatı və xalis qara şokoladlı muss.',
+          price: 28,
           imageUrl: 'https://images.unsplash.com/photo-1549576490-b0b4831ef60a?auto=format&fit=crop&w=800&q=80',
           categoryId: chocCat.id,
           categoryName: chocCat.name
+        },
+        {
+          id: 'cake-7',
+          name: 'Kraliça Zümrüd Nişan Tortu',
+          description: 'Zərif məxmər teksturalı, mirvari bəzəklər və fərdi xəttatlıq yazısı ilə bəzədilmiş nişan tortu.',
+          price: 35,
+          imageUrl: 'https://images.unsplash.com/photo-1606983340126-99ab4feaa64a?auto=format&fit=crop&w=800&q=80',
+          categoryId: wedCat.id,
+          categoryName: wedCat.name
+        },
+        {
+          id: 'cake-8',
+          name: 'Fərdi Tematik Uşaq Tortu',
+          description: 'Uşaq ad günləri üçün sevimli personajlar, zərərsiz təbii rənglər və meyvəli biskvit.',
+          price: 22,
+          imageUrl: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?auto=format&fit=crop&w=800&q=80',
+          categoryId: customCat.id,
+          categoryName: customCat.name
         }
       ];
     } else {
@@ -198,7 +293,7 @@ async function loadProducts() {
   } catch (error) {
     console.error('Məhsul yüklənməsi xətası:', error);
     grid.innerHTML = `
-      <div class="empty-state">
+      <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 3rem 1rem;">
         <p>Məhsullar yüklənərkən xəta baş verdi. Zəhmət olmasa bir az sonra yenidən cəhd edin.</p>
       </div>
     `;
@@ -207,8 +302,13 @@ async function loadProducts() {
 
 function filterByCategory(categoryId, clickedBtn) {
   currentCategory = categoryId;
-  document.querySelectorAll('.category-pill').forEach(btn => btn.classList.remove('active'));
-  if (clickedBtn) clickedBtn.classList.add('active');
+  document.querySelectorAll('.filter-pill').forEach(btn => btn.classList.remove('active'));
+  if (clickedBtn) {
+    clickedBtn.classList.add('active');
+  } else {
+    const pill = document.querySelector(`.filter-pill[data-category="${categoryId}"]`);
+    if (pill) pill.classList.add('active');
+  }
   renderProducts();
 }
 
@@ -222,8 +322,9 @@ function renderProducts() {
 
   if (filtered.length === 0) {
     grid.innerHTML = `
-      <div class="empty-state">
-        <p><i class="fa-regular fa-face-smile"></i> Bu kateqoriyada hələlik məhsul yoxdur.</p>
+      <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 4rem 1rem; color: var(--text-muted);">
+        <i class="fa-regular fa-face-smile" style="font-size: 2.5rem; color: var(--primary-burgundy); margin-bottom: 0.8rem;"></i>
+        <p>Bu kateqoriyada hələlik məhsul yoxdur.</p>
       </div>
     `;
     return;
@@ -237,20 +338,20 @@ function renderProducts() {
     card.className = 'product-card';
 
     card.innerHTML = `
-      <div class="card-img-wrap card-clickable" onclick="openProductDetail('${prod.id}')">
+      <div class="card-image-box" onclick="openProductDetail('${prod.id}')">
         <img src="${prod.imageUrl}" alt="${prod.name}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80'" />
-        <span class="card-badge">${prod.categoryName || 'Eksklüziv'}</span>
-        <button class="btn-fav-card ${isFav ? 'active' : ''}" onclick="toggleWishlist('${prod.id}', event)" title="Sevimlilərə əlavə et">
+        <span class="card-category-badge">${prod.categoryName || 'Eksklüziv'}</span>
+        <button class="card-fav-btn ${isFav ? 'active' : ''}" onclick="toggleWishlist('${prod.id}', event)" title="İstək siyahısına əlavə et">
           <i class="${isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}"></i>
         </button>
       </div>
-      <div class="card-body">
-        <h3 class="card-clickable" onclick="openProductDetail('${prod.id}')">${prod.name}</h3>
-        <p class="card-clickable" onclick="openProductDetail('${prod.id}')">${prod.description}</p>
-        <div class="card-footer">
-          <div class="card-price">${prod.price} <span>AZN / kq</span></div>
-          <button onclick="addToCart('${prod.id}', 1)" class="btn-order" style="border:none; cursor:pointer;">
-            <i class="fa-solid fa-basket-shopping"></i> Səbətə At
+      <div class="card-content">
+        <h3 onclick="openProductDetail('${prod.id}')">${prod.name}</h3>
+        <p onclick="openProductDetail('${prod.id}')">${prod.description}</p>
+        <div class="card-footer-row">
+          <div class="card-price-tag">${prod.price} <span>AZN / kq</span></div>
+          <button onclick="addToCart('${prod.id}', 1)" class="btn-card-order" title="Səbətə at">
+            <i class="fa-solid fa-basket-shopping"></i> Sifariş et
           </button>
         </div>
       </div>
@@ -260,7 +361,7 @@ function renderProducts() {
 
     setTimeout(() => {
       card.classList.add('loaded');
-    }, index * 60);
+    }, index * 40);
   });
 }
 
@@ -284,11 +385,11 @@ window.openProductDetail = function(productId) {
   // Favori vəziyyəti
   const isFav = wishlist.some(item => item.id === prod.id);
   const favBtn = document.getElementById('modalFavBtn');
-  favBtn.innerHTML = `<i class="${isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}" style="${isFav ? 'color:#e63946;' : ''}"></i>`;
+  favBtn.innerHTML = `<i class="${isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}" style="${isFav ? 'color:#E63946;' : ''}"></i>`;
   favBtn.onclick = () => {
     toggleWishlist(prod.id);
     const updatedFav = wishlist.some(item => item.id === prod.id);
-    favBtn.innerHTML = `<i class="${updatedFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}" style="${updatedFav ? 'color:#e63946;' : ''}"></i>`;
+    favBtn.innerHTML = `<i class="${updatedFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}" style="${updatedFav ? 'color:#E63946;' : ''}"></i>`;
   };
 
   // Səbətə əlavə et düyməsi
@@ -315,7 +416,6 @@ window.changeDetailQty = function(delta) {
 // 3. SƏBƏT (CART) İDARƏETMƏSİ
 // ----------------------------------------------------
 function initCartAndWishlistUI() {
-  // Səbəti Aç / Bağla
   const openCartBtn = document.getElementById('openCartBtn');
   const cartDrawerBackdrop = document.getElementById('cartDrawerBackdrop');
   if (openCartBtn) openCartBtn.addEventListener('click', openCartDrawer);
@@ -325,7 +425,6 @@ function initCartAndWishlistUI() {
     });
   }
 
-  // Sevimliləri Aç / Bağla
   const openWishlistBtn = document.getElementById('openWishlistBtn');
   const wishlistModal = document.getElementById('wishlistModal');
   if (openWishlistBtn) openWishlistBtn.addEventListener('click', openWishlistModal);
@@ -402,10 +501,10 @@ function renderCartDrawer() {
 
   if (cart.length === 0) {
     container.innerHTML = `
-      <div class="cart-empty-box">
+      <div class="cart-empty-state">
         <i class="fa-solid fa-basket-shopping"></i>
-        <h4>Səbətiniz boşdur</h4>
-        <p style="font-size:0.85rem; margin-top:0.4rem;">Ləzzətli tortlarımızdan seçib səbətə əlavə edin.</p>
+        <h4 style="color: var(--text-dark); margin-bottom: 0.3rem;">Səbətiniz boşdur</h4>
+        <p style="font-size:0.88rem;">Zərif tortlarımızdan seçib səbətə əlavə edin.</p>
       </div>
     `;
     totalEl.textContent = '0 AZN';
@@ -424,20 +523,20 @@ function renderCartDrawer() {
     orderSummaryText += `🍰 *${item.name}* — ${item.qty} kq (${itemTotal} AZN)%0A`;
 
     const row = document.createElement('div');
-    row.className = 'cart-item-card';
+    row.className = 'cart-item-row';
     row.innerHTML = `
       <img src="${item.imageUrl}" class="cart-item-img" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=100&q=80'" />
       <div class="cart-item-info">
         <h4>${item.name}</h4>
         <div class="item-unit-price">${item.price} AZN / kq</div>
-        <div class="cart-item-ctrl">
+        <div class="cart-item-qty-ctrl">
           <button onclick="updateCartQty('${item.id}', -0.5)">-</button>
           <span style="font-size:0.85rem; font-weight:700; min-width:32px; text-align:center;">${item.qty} kq</span>
           <button onclick="updateCartQty('${item.id}', 0.5)">+</button>
         </div>
       </div>
       <div style="text-align: right;">
-        <div style="font-weight:700; color:var(--dusty-rose); font-size:1rem; margin-bottom:0.4rem;">${itemTotal} AZN</div>
+        <div style="font-weight:700; color:var(--primary-burgundy); font-size:1rem; margin-bottom:0.4rem;">${itemTotal} AZN</div>
         <button onclick="removeFromCart('${item.id}')" style="background:none; border:none; color:#c5221f; cursor:pointer;" title="Sil">
           <i class="fa-solid fa-trash-can"></i>
         </button>
@@ -452,9 +551,8 @@ function renderCartDrawer() {
   waBtn.href = `https://wa.me/994703676561?text=${orderSummaryText}`;
 }
 
-
 // ----------------------------------------------------
-// 4. SEVİMLİLƏR (WISHLIST) İDARƏETMƏSİ
+// 4. İSTƏK SİYAHISI (WISHLIST) İDARƏETMƏSİ
 // ----------------------------------------------------
 window.toggleWishlist = function(productId, event) {
   if (event) event.stopPropagation();
@@ -465,7 +563,7 @@ window.toggleWishlist = function(productId, event) {
   const index = wishlist.findIndex(item => item.id === prod.id);
   if (index > -1) {
     wishlist.splice(index, 1);
-    showToast(`"${prod.name}" favorilərdən çıxarıldı.`);
+    showToast(`"${prod.name}" istək siyahısından çıxarıldı.`);
   } else {
     wishlist.push({
       id: prod.id,
@@ -474,7 +572,7 @@ window.toggleWishlist = function(productId, event) {
       imageUrl: prod.imageUrl,
       categoryName: prod.categoryName
     });
-    showToast(`"${prod.name}" favorilərə əlavə edildi! ❤️`);
+    showToast(`"${prod.name}" istək siyahısına əlavə edildi! ❤️`);
   }
 
   localStorage.setItem('sweet_bakery_wishlist', JSON.stringify(wishlist));
@@ -498,9 +596,9 @@ function renderWishlistModal() {
 
   if (wishlist.length === 0) {
     container.innerHTML = `
-      <div style="text-align:center; padding: 3rem 1rem; color:var(--choco-muted);">
-        <i class="fa-regular fa-heart" style="font-size:2.5rem; color:var(--dusty-rose); margin-bottom:0.8rem;"></i>
-        <p>Hələ heç bir tortu sevimlilərə əlavə etməmisiniz.</p>
+      <div style="text-align:center; padding: 3rem 1rem; color:var(--text-muted);">
+        <i class="fa-regular fa-heart" style="font-size:2.5rem; color:var(--primary-burgundy); margin-bottom:0.8rem; opacity: 0.6;"></i>
+        <p>Hələ heç bir tortu istək siyahısına əlavə etməmisiniz.</p>
       </div>
     `;
     return;
@@ -509,15 +607,15 @@ function renderWishlistModal() {
   container.innerHTML = '';
   wishlist.forEach(item => {
     const row = document.createElement('div');
-    row.className = 'cart-item-card';
+    row.className = 'cart-item-row';
     row.innerHTML = `
       <img src="${item.imageUrl}" class="cart-item-img" />
       <div class="cart-item-info">
         <h4>${item.name}</h4>
-        <div style="font-weight:700; color:var(--dusty-rose);">${item.price} AZN</div>
+        <div style="font-weight:700; color:var(--primary-burgundy);">${item.price} AZN / kq</div>
       </div>
-      <div style="display:flex; gap:0.5rem; align-items:center;">
-        <button onclick="addToCart('${item.id}', 1); closeWishlistModal();" class="btn-order" style="border:none; cursor:pointer; font-size:0.8rem; padding:0.4rem 0.8rem;">
+      <div style="display:flex; gap:0.6rem; align-items:center;">
+        <button onclick="addToCart('${item.id}', 1); closeWishlistModal();" class="btn-card-order">
           <i class="fa-solid fa-basket-shopping"></i> Səbətə At
         </button>
         <button onclick="toggleWishlist('${item.id}')" style="background:none; border:none; color:#c5221f; cursor:pointer; padding:0.4rem;" title="Sil">
@@ -539,7 +637,89 @@ function updateBadgeCounts() {
 }
 
 // ----------------------------------------------------
-// 5. Vahid Giriş / Qeydiyyat və İstifadəçi Təhlili (Auth)
+// 5. FƏRDİ TORT SİFARİŞİ (CUSTOM CAKE ORDER FORM)
+// ----------------------------------------------------
+function initCustomOrderForm() {
+  const form = document.getElementById('customOrderForm');
+  const fileInput = document.getElementById('customImageFile');
+  const fileNameText = document.getElementById('customFileName');
+  const feedback = document.getElementById('customOrderFeedback');
+
+  if (fileInput && fileNameText) {
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files && fileInput.files[0]) {
+        fileNameText.textContent = `Seçildi: ${fileInput.files[0].name}`;
+      } else {
+        fileNameText.textContent = 'Şəkil faylını seçmək üçün bura klikləyin';
+      }
+    });
+  }
+
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const name = document.getElementById('customName').value.trim();
+      const phone = document.getElementById('customPhone').value.trim();
+      const date = document.getElementById('customDate').value;
+      const size = document.getElementById('customSize').value;
+      const flavor = document.getElementById('customFlavor').value;
+      const design = document.getElementById('customDesign').value.trim();
+      const notes = document.getElementById('customNotes').value.trim();
+
+      if (!name || !phone || !date || !size || !flavor) {
+        showToast('Zəhmət olmasa ulduzlu (*) bütün vacib sahələri doldurun.', true);
+        return;
+      }
+
+      feedback.innerHTML = '<span style="color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Sifariş hazırlanır...</span>';
+
+      try {
+        // Firestore-a qeyd etməyə cəhd edirik (əgər icazə varsa)
+        await db.collection('custom_orders').add({
+          clientName: name,
+          phone: phone,
+          deliveryDate: date,
+          size: size,
+          flavor: flavor,
+          designDescription: design || 'Qeyd yoxdur',
+          additionalNotes: notes || 'Qeyd yoxdur',
+          status: 'Gözləmədə',
+          createdAt: new Date()
+        }).catch(err => {
+          console.warn('Firestore-a yazılış xətası (WhatsApp vasitəsilə davam olunur):', err);
+        });
+      } catch (err) {
+        console.warn('Firestore custom_orders fallback:', err);
+      }
+
+      // WhatsApp üçün aydın və estetik sifariş mətni
+      let waText = `Salam Sweet Bakery! Özəl tort sifarişi vermək istəyirəm:%0A%0A`;
+      waText += `🎂 *Müştəri:* ${encodeURIComponent(name)}%0A`;
+      waText += `📞 *Əlaqə nömrəsi:* ${encodeURIComponent(phone)}%0A`;
+      waText += `📅 *Lazım olan tarix:* ${encodeURIComponent(date)}%0A`;
+      waText += `⚖️ *Ölçü / Nəfər sayı:* ${encodeURIComponent(size)}%0A`;
+      waText += `🍫 *Dad və krem:* ${encodeURIComponent(flavor)}%0A`;
+      if (design) waText += `🎨 *Dizayn haqqında:* ${encodeURIComponent(design)}%0A`;
+      if (notes) waText += `📝 *Əlavə qeydlər:* ${encodeURIComponent(notes)}%0A`;
+      waText += `%0AZəhmət olmasa qiymət və detalları təsdiqləyəsiniz.`;
+
+      feedback.innerHTML = '<span style="color:#137333;"><i class="fa-solid fa-circle-check"></i> Sifarişiniz qeydə alındı! WhatsApp-a yönləndirilirsiniz...</span>';
+      showToast('Sifariş qeydə alındı! WhatsApp açılır.');
+
+      // WhatsApp-a yönləndirmə
+      setTimeout(() => {
+        window.open(`https://wa.me/994703676561?text=${waText}`, '_blank');
+        form.reset();
+        if (fileNameText) fileNameText.textContent = 'Şəkil faylını seçmək üçün bura klikləyin';
+        feedback.innerHTML = '';
+      }, 1000);
+    });
+  }
+}
+
+// ----------------------------------------------------
+// 6. Vahid Giriş / Qeydiyyat və İstifadəçi Təhlili (Auth)
 // ----------------------------------------------------
 function initAuthUI() {
   const modal = document.getElementById('authModal');
@@ -671,18 +851,18 @@ function updateNavbarAuthState(user) {
     const displayName = user.displayName || user.email.split('@')[0];
 
     authArea.innerHTML = `
-      <div class="user-profile-badge">
-        <div class="user-avatar"><i class="fa-solid fa-user"></i></div>
+      <div class="user-logged-badge">
+        <i class="fa-regular fa-user" style="color:var(--primary-burgundy);"></i>
         <span>${displayName}</span>
       </div>
       
       ${isUserAdmin ? `
-        <a href="admin.html" class="btn-admin-crown" title="İdarəetmə Panelinə Keçid">
-          <i class="fa-solid fa-crown"></i> Admin Paneli
+        <a href="admin.html" class="btn-admin-pill" title="İdarəetmə Panelinə Keçid">
+          <i class="fa-solid fa-crown"></i> Admin
         </a>
       ` : ''}
 
-      <button id="navLogoutBtn" class="btn-outline" style="padding: 0.45rem 0.9rem; font-size: 0.85rem;" title="Çıxış">
+      <button id="navLogoutBtn" class="icon-action-btn" style="width:36px; height:36px; font-size:0.9rem;" title="Çıxış">
         <i class="fa-solid fa-right-from-bracket"></i>
       </button>
     `;
@@ -694,8 +874,9 @@ function updateNavbarAuthState(user) {
 
   } else {
     authArea.innerHTML = `
-      <button id="openAuthModalBtn" class="btn-outline">
-        <i class="fa-regular fa-user"></i> Daxil Ol / Qeydiyyat
+      <button id="openAuthModalBtn" class="btn-header-login">
+        <i class="fa-regular fa-user"></i>
+        <span>Giriş</span>
       </button>
     `;
     document.getElementById('openAuthModalBtn').addEventListener('click', () => openAuthModal('login'));

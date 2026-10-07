@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sweet Bakery — Şirin Xəyallarınızın Dadı | Premium Tortlar</title>
-  <meta name="description" content="Sweet Bakery ilə xüsusi günləriniz üçün zərif, dadlı və təbii inqrediyentlərlə hazırlanan lüks tort sifarişi." />
+  <title>Sweet Bakery — Zərif və Fərdi Tortlar | Premium Patisserie</title>
+  <meta name="description" content="Sweet Bakery ilə xüsusi günləriniz üçün zərif, lüks və təbii inqrediyentlərlə hazırlanan əl işi tortlar." />
   <link rel="stylesheet" href="styles.css" />
   
   <!-- Font Awesome Icons -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   
-  <!-- Firebase SDKs -->
+  <!-- Firebase Compat SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
@@ -20,208 +20,562 @@
 </head>
 <body>
 
-  <!-- Background Decorative Ambient Blobs -->
-  <div class="bg-blobs">
-    <div class="blob-1"></div>
-    <div class="blob-2"></div>
+  <!-- Background Ambient Glow Accents -->
+  <div class="ambient-bg" aria-hidden="true">
+    <div class="ambient-blob-1"></div>
+    <div class="ambient-blob-2"></div>
   </div>
 
-  <!-- Navigation Bar -->
-  <nav class="navbar">
-    <div class="nav-container">
-      <a href="index.html" class="brand-logo">
-        <div class="logo-icon">🍰</div>
+  <!-- ==========================================================================
+       HEADER & NAVIGATION
+       ========================================================================== -->
+  <header class="site-header" id="siteHeader">
+    <div class="container header-container">
+      <!-- Sol: Sweet Bakery Loqosu -->
+      <a href="index.html" class="brand-logo" aria-label="Sweet Bakery Ana Səhifə">
+        <div class="logo-badge">🍰</div>
         <span>Sweet Bakery</span>
       </a>
-      
-      <div class="nav-links">
-        <a href="#catalogue">Tortlarımız</a>
-        <a href="#about">Haqqımızda</a>
-        <a href="#contact">Əlaqə</a>
-        
-        <!-- Favorilər (Wishlist) İkonu -->
-        <button id="openWishlistBtn" class="nav-icon-btn" title="Sevimlilər">
+
+      <!-- Mərkəz: Əsas Menyu -->
+      <nav class="header-nav" aria-label="Əsas Naviqasiya">
+        <a href="#hero" class="nav-link active">Ana səhifə</a>
+        <a href="#categories" class="nav-link">Kateqoriyalar</a>
+        <a href="#catalogue" class="nav-link">Tortlarımız</a>
+        <a href="#custom-order" class="nav-link">Fərdi sifariş</a>
+        <a href="#about" class="nav-link">Haqqımızda</a>
+        <a href="#contact" class="nav-link">Əlaqə</a>
+      </nav>
+
+      <!-- Sağ: Fəaliyyət İkonları və Giriş Sahəsi -->
+      <div class="header-actions">
+        <!-- İstək siyahısı (Wishlist) -->
+        <button id="openWishlistBtn" class="icon-action-btn" title="İstək siyahısı" aria-label="İstək siyahısı">
           <i class="fa-regular fa-heart"></i>
-          <span class="badge-count" id="wishlistCount">0</span>
+          <span class="icon-badge" id="wishlistCount">0</span>
         </button>
 
-        <!-- Səbət (Cart) İkonu -->
-        <button id="openCartBtn" class="nav-icon-btn" title="Səbət">
+        <!-- Səbət (Cart) -->
+        <button id="openCartBtn" class="icon-action-btn" title="Səbət" aria-label="Səbət">
           <i class="fa-solid fa-basket-shopping"></i>
-          <span class="badge-count" id="cartCount">0</span>
+          <span class="icon-badge" id="cartCount">0</span>
         </button>
 
-        <!-- Dinamik İstifadəçi / Giriş Sahəsi (Sağ üst künc) -->
-        <div id="authNavZone" class="user-auth-area">
-          <button id="openAuthModalBtn" class="btn-outline">
-            <i class="fa-regular fa-user"></i> Daxil Ol / Qeydiyyat
+        <!-- Hesabım / Giriş (Dinamik) -->
+        <div id="authNavZone" class="user-auth-zone">
+          <button id="openAuthModalBtn" class="btn-header-login">
+            <i class="fa-regular fa-user"></i>
+            <span>Giriş</span>
           </button>
         </div>
 
-        <!-- WhatsApp Əlaqə Düyməsi -->
-        <a href="https://wa.me/994703676561" target="_blank" class="btn-contact" style="background: #25d366; box-shadow: 0 4px 15px rgba(37, 211, 102, 0.3);">
-          <i class="fa-brands fa-whatsapp"></i> WhatsApp
+        <!-- Bordo WhatsApp Sifariş Düyməsi -->
+        <a href="https://wa.me/994703676561" target="_blank" rel="noopener noreferrer" class="btn-header-whatsapp" title="WhatsApp ilə birbaşa əlaqə">
+          <i class="fa-brands fa-whatsapp"></i>
+          <span>WhatsApp-la sifariş et</span>
         </a>
-      </div>
-    </div>
-  </nav>
 
-  <!-- Hero Section -->
-  <header class="hero-section">
-    <div class="hero-content">
-      <span class="badge">Eksklüziv Şirniyyat Evi</span>
-      <h1>Şirin xəyallarınızın <span>ən zərif</span> dadı</h1>
-      <p>Hər bir tortumuz xüsusi reseptlə, 100% təbii kərə yağı və Belçika şokoladı ilə əl işi olaraq hazırlanır. Özəl günlərinizə unudulmaz şirinlik bəxş edin.</p>
-      
-      <div class="hero-cta-group">
-        <a href="#catalogue" class="btn-contact" style="padding: 0.85rem 2rem; font-size: 1rem;">
-          Kataloqa Bax <i class="fa-solid fa-arrow-right"></i>
-        </a>
-        <a href="https://instagram.com" target="_blank" class="btn-outline" style="padding: 0.85rem 1.8rem; font-size: 1rem;">
-          <i class="fa-brands fa-instagram"></i> Instagram
-        </a>
-      </div>
-    </div>
-
-    <div class="hero-visual">
-      <div class="hero-visual-card">
-        <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=1200&q=80" alt="Zərif Lüks Tort" id="heroImg" />
-      </div>
-      <div class="hero-floating-badge">
-        <div class="badge-icon">✨</div>
-        <div>
-          <h4>100% Təbii və Təzə</h4>
-          <p>Gündəlik sifarişlə xüsusi hazırlanır</p>
-        </div>
+        <!-- Mobil Menyu Düyməsi -->
+        <button id="mobileNavToggle" class="mobile-menu-toggle" aria-label="Menyunu aç" title="Menyu">
+          <i class="fa-solid fa-bars"></i>
+        </button>
       </div>
     </div>
   </header>
 
-  <!-- Features Strip -->
-  <section class="features-strip" id="about">
-    <div class="features-container">
-      <div class="feature-item">
-        <div class="feature-icon"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
-        <div class="feature-text">
-          <h4>Fərdi Dizayn</h4>
-          <p>İstədiyiniz rəng, forma və mövzuda unikal tortlar.</p>
+  <!-- Mobil Naviqasiya Yan Paneli -->
+  <div id="mobileNavBackdrop" class="mobile-nav-backdrop">
+    <div class="mobile-nav-drawer">
+      <div class="mobile-nav-header">
+        <div class="brand-logo">
+          <div class="logo-badge">🍰</div>
+          <span>Sweet Bakery</span>
         </div>
+        <button id="closeMobileNavBtn" class="modal-close-btn" style="position: static;" aria-label="Bağla">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
       </div>
 
-      <div class="feature-item">
-        <div class="feature-icon"><i class="fa-solid fa-leaf"></i></div>
-        <div class="feature-text">
-          <h4>Premium İnqrediyentlər</h4>
-          <p>Heç bir süni qatqı yoxdur, yalnız təmiz Belçika şokoladı.</p>
-        </div>
+      <div class="mobile-nav-links">
+        <a href="#hero" class="mobile-nav-link"><i class="fa-solid fa-house"></i> Ana səhifə</a>
+        <a href="#categories" class="mobile-nav-link"><i class="fa-solid fa-layer-group"></i> Kateqoriyalar</a>
+        <a href="#catalogue" class="mobile-nav-link"><i class="fa-solid fa-cake-candles"></i> Tortlarımız</a>
+        <a href="#custom-order" class="mobile-nav-link"><i class="fa-solid fa-wand-magic-sparkles"></i> Fərdi sifariş</a>
+        <a href="#about" class="mobile-nav-link"><i class="fa-solid fa-heart"></i> Haqqımızda</a>
+        <a href="#contact" class="mobile-nav-link"><i class="fa-solid fa-phone"></i> Əlaqə</a>
       </div>
 
-      <div class="feature-item">
-        <div class="feature-icon"><i class="fa-solid fa-truck-fast"></i></div>
-        <div class="feature-text">
-          <h4>Təhlükəsiz Çatdırılma</h4>
-          <p>Xüsusi soyuduculu qutularda qapınıza qədər.</p>
+      <div style="margin-top: auto; display: flex; flex-direction: column; gap: 0.8rem;">
+        <a href="https://wa.me/994703676561" target="_blank" rel="noopener noreferrer" class="btn-cart-whatsapp" style="text-decoration:none;">
+          <i class="fa-brands fa-whatsapp"></i> WhatsApp: 070 367 65 61
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       HERO SECTION
+       ========================================================================== -->
+  <section class="hero-section" id="hero">
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-content">
+          <span class="hero-overtitle">HƏR ÖZƏL GÜNƏ XÜSUSİ TORT</span>
+          <h1 class="hero-title">Hər özəl günə xüsusi <span class="highlight-burgundy">tort.</span></h1>
+          <p class="hero-desc">
+            Ad günləri, nişanlar, toylar və digər xüsusi anlarınız üçün zövqünüzə uyğun tortlar hazırlayırıq. 
+            Sevdiyiniz dizaynı seçin, sifarişinizi yaradın və gününüzü daha da şirin edin.
+          </p>
+          <div class="hero-btn-group">
+            <a href="#catalogue" class="btn-primary-burgundy">
+              Tortları kəşf et <i class="fa-solid fa-arrow-right"></i>
+            </a>
+            <a href="#about" class="btn-secondary-outline">
+              İşlərimizə bax <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.85rem;"></i>
+            </a>
+          </div>
+        </div>
+
+        <div class="hero-visual-wrap">
+          <div class="hero-image-card">
+            <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=1200&q=85" alt="Sweet Bakery Zərif Əl İşi Tort" id="heroMainImage" />
+          </div>
+          <div class="hero-floating-card">
+            <div class="floating-card-icon">
+              <i class="fa-solid fa-star"></i>
+            </div>
+            <div class="floating-card-text">
+              <h5>Sifarişinizə özəl hazırlanır</h5>
+              <p>Seçdiyiniz dizayn və ölçüyə uyğun.</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- Catalogue Section -->
-  <main class="catalogue-section" id="catalogue">
-    <div class="section-head">
-      <span class="subtitle">Eksklüziv Kolleksiya</span>
-      <h2>Tort Kataloqumuz</h2>
-    </div>
-
-    <!-- Category Pills Filter -->
-    <div class="category-filter-wrap" id="categoryContainer">
-      <button class="category-pill active" data-category="all">Bütün Tortlar</button>
-      <!-- Dinamik kateqoriyalar app.js ilə əlavə olunur -->
-    </div>
-
-    <!-- Products Grid -->
-    <div class="product-grid" id="productContainer">
-      <div class="empty-state">
-        <p><i class="fa-solid fa-spinner fa-spin"></i> Tortlar yüklənir...</p>
-      </div>
-    </div>
-  </main>
-
-  <!-- Footer -->
-  <footer class="luxury-footer" id="contact">
-    <div class="footer-container">
-      <div class="footer-brand">
-        <div class="brand-logo" style="margin-bottom: 1rem;">
-          <div class="logo-icon" style="background: rgba(255,255,255,0.1); color: #fff;">🍰</div>
-          <span style="color: #fff; font-size: 1.6rem;">Sweet Bakery</span>
-        </div>
-        <p>Bakının ən incə zövqlü şirniyyat brendi. Hər bir sifariş üçün sevgi və peşəkarlıqla zənginləşdirilmiş sənət əsərləri yaradırıq.</p>
-      </div>
-
-      <div class="footer-block">
-        <h4>Naviqasiya</h4>
-        <div class="footer-contacts" style="display: flex; flex-direction: column;">
-          <a href="#catalogue"><i class="fa-solid fa-angle-right"></i> Tort Kataloqu</a>
-          <a href="#about"><i class="fa-solid fa-angle-right"></i> Niyə Biz?</a>
-          <a href="javascript:void(0)" onclick="openAuthModal('login')"><i class="fa-solid fa-angle-right"></i> Müştəri Girişi</a>
-        </div>
-      </div>
-
-      <div class="footer-block">
-        <h4>Sifariş və Əlaqə</h4>
-        <div class="footer-contacts">
-          <a href="https://wa.me/994703676561" target="_blank" style="color: #25d366; font-weight: 600;">
-            <i class="fa-brands fa-whatsapp"></i> WhatsApp ilə Əlaqə: 070 367 65 61
-          </a>
-          <a href="https://instagram.com" target="_blank">
-            <i class="fa-brands fa-instagram"></i> @sweetbakery.az
-          </a>
-          <a href="#">
-            <i class="fa-solid fa-location-dot"></i> Bakı şəhəri, Nizami küç. 42
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <div class="footer-bottom">
-      <p>© 2026 Sweet Bakery. Bütün hüquqlar qorunur.</p>
-      <p style="color: rgba(255,255,255,0.4); font-size: 0.8rem;">Sevgi ilə hazırlandı ✨</p>
-    </div>
-  </footer>
-
-  <!-- ==============================================
-       1. MƏHSULA TAM ŞƏKİLDƏ BAXIŞ MODALI (QUICK VIEW)
-       ============================================== -->
-  <div id="productDetailModal" class="product-modal-backdrop">
-    <div class="product-modal-box">
-      <button class="modal-close-btn" onclick="closeProductModal()">
-        <i class="fa-solid fa-xmark"></i>
-      </button>
-
-      <div class="product-modal-media">
-        <img id="detailImg" src="" alt="Tort" />
-      </div>
-
-      <div class="product-modal-content">
-        <span class="modal-cat-badge" id="detailCat">Kateqoriya</span>
-        <h2 id="detailName">Tort Adı</h2>
-        <div class="modal-price" id="detailPrice">Kiloqramı: 0 AZN</div>
-        <p class="modal-desc" id="detailDesc">Tortun inqrediyentləri və təsviri...</p>
-
-        <div class="qty-control-wrap">
-          <label>Çəki (kq):</label>
-          <div class="qty-box">
-            <button class="qty-btn" onclick="changeDetailQty(-0.5)">-</button>
-            <span class="qty-val" id="detailQty">1 kq</span>
-            <button class="qty-btn" onclick="changeDetailQty(0.5)">+</button>
+  <!-- ==========================================================================
+       ÜSTÜNLÜKLƏR ZOLAĞI (BENEFITS STRIP)
+       ========================================================================== -->
+  <section class="benefits-section">
+    <div class="container">
+      <div class="benefits-grid">
+        <div class="benefit-item">
+          <div class="benefit-icon-box">
+            <i class="fa-solid fa-seedling"></i>
+          </div>
+          <div class="benefit-content">
+            <h4>Təzə və keyfiyyətli inqrediyentlər</h4>
+            <p>Yalnız 100% təbii kərə yağı və xalis Belçika şokoladı.</p>
           </div>
         </div>
 
-        <div class="modal-actions-grid">
-          <button id="modalAddToCartBtn" class="btn-contact" style="border: none; cursor: pointer; padding: 0.85rem; font-size: 0.95rem;">
+        <div class="benefit-item">
+          <div class="benefit-icon-box">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </div>
+          <div class="benefit-content">
+            <h4>Zövqünüzə uyğun fərdi dizaynlar</h4>
+            <p>Hər bir detal sizin arzuladığınız üslubda işlənir.</p>
+          </div>
+        </div>
+
+        <div class="benefit-item">
+          <div class="benefit-icon-box">
+            <i class="fa-solid fa-truck-fast"></i>
+          </div>
+          <div class="benefit-content">
+            <h4>Bakı daxilində çatdırılma</h4>
+            <p>Xüsusi soyuducu qutularda ünvana təhlükəsiz çatdırılma.</p>
+          </div>
+        </div>
+
+        <div class="benefit-item">
+          <div class="benefit-icon-box">
+            <i class="fa-regular fa-face-smile"></i>
+          </div>
+          <div class="benefit-content">
+            <h4>Müştəri məmnuniyyəti</h4>
+            <p>Hər bir müştərimiz üçün zərif xidmət və yüksək keyfiyyət.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       TORT KATEQORİYALARI (CATEGORY CARDS)
+       ========================================================================== -->
+  <section class="categories-section" id="categories">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Kolleksiyalar</span>
+        <h2>Tortlarımız</h2>
+        <p>Hər zövqə və hər özəl ana uyğun seçimlər.</p>
+      </div>
+
+      <div class="categories-grid">
+        <!-- 1. Şokoladlı tortlar -->
+        <div class="category-card" onclick="selectCategoryByName('Şokoladlı tortlar')">
+          <div class="category-image-wrap">
+            <img src="https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=700&q=80" alt="Şokoladlı tortlar" loading="lazy" />
+          </div>
+          <div class="category-card-body">
+            <h3>Şokoladlı tortlar</h3>
+            <span class="cat-hint">Məhsullara bax <i class="fa-solid fa-arrow-right"></i></span>
+          </div>
+        </div>
+
+        <!-- 2. Ad günü tortları -->
+        <div class="category-card" onclick="selectCategoryByName('Ad günü tortları')">
+          <div class="category-image-wrap">
+            <img src="https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=700&q=80" alt="Ad günü tortları" loading="lazy" />
+          </div>
+          <div class="category-card-body">
+            <h3>Ad günü tortları</h3>
+            <span class="cat-hint">Məhsullara bax <i class="fa-solid fa-arrow-right"></i></span>
+          </div>
+        </div>
+
+        <!-- 3. Nişan və toy tortları -->
+        <div class="category-card" onclick="selectCategoryByName('Nişan və toy tortları')">
+          <div class="category-image-wrap">
+            <img src="https://images.unsplash.com/photo-1535254973040-607b474cb50d?auto=format&fit=crop&w=700&q=80" alt="Nişan və toy tortları" loading="lazy" />
+          </div>
+          <div class="category-card-body">
+            <h3>Nişan və toy tortları</h3>
+            <span class="cat-hint">Məhsullara bax <i class="fa-solid fa-arrow-right"></i></span>
+          </div>
+        </div>
+
+        <!-- 4. Fərdi dizaynlı tortlar -->
+        <div class="category-card" onclick="selectCategoryByName('Fərdi dizaynlı tortlar')">
+          <div class="category-image-wrap">
+            <img src="https://images.unsplash.com/photo-1586985289688-ca3cf47d3e6e?auto=format&fit=crop&w=700&q=80" alt="Fərdi dizaynlı tortlar" loading="lazy" />
+          </div>
+          <div class="category-card-body">
+            <h3>Fərdi dizaynlı tortlar</h3>
+            <span class="cat-hint">Məhsullara bax <i class="fa-solid fa-arrow-right"></i></span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       SEÇİLMİŞ MƏHSULLAR — E-COMMERCE KATALOQU
+       ========================================================================== -->
+  <section class="catalogue-section" id="catalogue">
+    <div class="container">
+      <div class="catalogue-top-row">
+        <div>
+          <span class="section-tag">Kataloq</span>
+          <h2>Ən çox bəyənilən tortlar</h2>
+          <p>Təbii inqrediyentlər və zərif reseptlərlə hazırlanan eksklüziv çeşidlərimiz.</p>
+        </div>
+        <a href="#catalogue" onclick="filterByCategory('all', null)" class="btn-view-all">
+          Bütün məhsullara bax <i class="fa-solid fa-arrow-right"></i>
+        </a>
+      </div>
+
+      <!-- Kateqoriya Filtrləri -->
+      <div class="filter-pills-wrap" id="categoryContainer">
+        <button class="filter-pill active" data-category="all">Bütün Tortlar</button>
+      </div>
+
+      <!-- Məhsul Grid-i -->
+      <div class="products-grid" id="productContainer">
+        <div class="empty-state" style="grid-column: 1 / -1; text-align: center; padding: 4rem 1rem;">
+          <p><i class="fa-solid fa-spinner fa-spin"></i> Tortlar yüklənir...</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       FƏRDİ TORT SİFARİŞİ (CUSTOM CAKE ORDER FORM)
+       ========================================================================== -->
+  <section class="custom-order-section" id="custom-order">
+    <div class="container">
+      <div class="custom-order-grid">
+        <!-- Sol tərəf məlumat -->
+        <div class="custom-order-info">
+          <span class="section-tag">Fərdi Yanaşma</span>
+          <h2>Öz tortunuzu yaradın</h2>
+          <p>
+            İstədiyiniz ölçünü, dadı və dizaynı seçin. İdeyanızı bizə bildirin, sifarişinizi birlikdə dəqiqləşdirək.
+          </p>
+
+          <div class="custom-highlights-list">
+            <div class="custom-highlight-item">
+              <div class="highlight-check-icon"><i class="fa-solid fa-check"></i></div>
+              <div><strong>Dizayn azadlığı:</strong> İstənilən referans foto və ya ideya üzrə hazırlıq.</div>
+            </div>
+            <div class="custom-highlight-item">
+              <div class="highlight-check-icon"><i class="fa-solid fa-check"></i></div>
+              <div><strong>Zərif inqrediyentlər:</strong> Qatqısız, təbii kərə yağı və Belçika şokoladı.</div>
+            </div>
+            <div class="custom-highlight-item">
+              <div class="highlight-check-icon"><i class="fa-solid fa-check"></i></div>
+              <div><strong>Dəqiq vaxtında təhvil:</strong> Qeyd etdiyiniz tarix və saat üçün hazır olunur.</div>
+            </div>
+          </div>
+
+          <div class="custom-order-wa-box">
+            <h4><i class="fa-brands fa-whatsapp" style="color: var(--whatsapp-green);"></i> Sürətli Sualınız Var?</h4>
+            <p>WhatsApp vasitəsilə dərhal menecerimizlə əlaqə saxlayıb məsləhət ala bilərsiniz.</p>
+            <a href="https://wa.me/994703676561" target="_blank" rel="noopener noreferrer" style="color: var(--primary-burgundy); font-weight:700; text-decoration: underline;">
+              070 367 65 61 ilə əlaqə saxlayın →
+            </a>
+          </div>
+        </div>
+
+        <!-- Sağ tərəf sifariş forması -->
+        <div class="custom-order-card">
+          <form id="customOrderForm">
+            <div class="custom-form-grid">
+              <div class="form-field-group">
+                <label for="customName">Ad və Soyad *</label>
+                <input type="text" id="customName" placeholder="Məs: Günel Əliyeva" required />
+              </div>
+
+              <div class="form-field-group">
+                <label for="customPhone">Əlaqə nömrəsi *</label>
+                <input type="tel" id="customPhone" placeholder="050 123 45 67" required />
+              </div>
+
+              <div class="form-field-group">
+                <label for="customDate">Hansı tarixə lazımdır? *</label>
+                <input type="date" id="customDate" required />
+              </div>
+
+              <div class="form-field-group">
+                <label for="customSize">Tortun ölçüsü / Nəfər sayı *</label>
+                <select id="customSize" required>
+                  <option value="">Ölçü seçin...</option>
+                  <option value="1.5 kq (6-8 nəfərlik)">1.5 kq (6-8 nəfərlik)</option>
+                  <option value="2.0 kq (10-12 nəfərlik)">2.0 kq (10-12 nəfərlik)</option>
+                  <option value="3.0 kq (15-18 nəfərlik)">3.0 kq (15-18 nəfərlik)</option>
+                  <option value="4.0+ kq (20+ nəfərlik)">4.0+ kq (20+ nəfərlik)</option>
+                  <option value="Mərtəbəli Toy / Nişan Tortu">Mərtəbəli Toy / Nişan Tortu</option>
+                </select>
+              </div>
+
+              <div class="form-field-group full-width">
+                <label for="customFlavor">Dad seçimi *</label>
+                <select id="customFlavor" required>
+                  <option value="">Dad və krem seçin...</option>
+                  <option value="Belçika Şokoladlı & Qanaş">Belçika Şokoladlı & Qanaş</option>
+                  <option value="Qırmızı Məxmər (Red Velvet)">Qırmızı Məxmər (Red Velvet)</option>
+                  <option value="Təbii Giləmeyvəli & Vanilli">Təbii Giləmeyvəli & Vanilli</option>
+                  <option value="Antep Püstəli & Moruqlu">Antep Püstəli & Moruqlu</option>
+                  <option value="Karamel & Fındıqlı Krukan">Karamel & Fındıqlı Krukan</option>
+                  <option value="Fərdi resept (izahda qeyd edəcəm)">Fərdi resept (izahda qeyd edəcəm)</option>
+                </select>
+              </div>
+
+              <div class="form-field-group full-width">
+                <label for="customDesign">Dizayn və yazı haqqında məlumat</label>
+                <textarea id="customDesign" rows="3" placeholder="Arzuladığınız rəng tonları, üzərindəki yazı, mövzu və detallar..."></textarea>
+              </div>
+
+              <div class="form-field-group full-width">
+                <label for="customImageFile">Referans şəkil (istəyə görə)</label>
+                <div class="file-upload-box" onclick="document.getElementById('customImageFile').click()">
+                  <i class="fa-regular fa-image" style="font-size: 1.5rem; color: var(--primary-burgundy); margin-bottom: 0.3rem;"></i>
+                  <p id="customFileName" style="font-size: 0.86rem; color: var(--text-dark); margin:0;">
+                    Şəkil faylını seçmək üçün bura klikləyin
+                  </p>
+                  <span style="font-size: 0.75rem; color: var(--text-muted);">(PNG, JPG, WEBP)</span>
+                </div>
+                <input type="file" id="customImageFile" accept="image/*" style="display: none;" />
+              </div>
+
+              <div class="form-field-group full-width">
+                <label for="customNotes">Əlavə qeydlər</label>
+                <input type="text" id="customNotes" placeholder="Məs: Allergik qeydlər və ya xüsusi saat" />
+              </div>
+
+              <div class="form-field-group full-width" style="margin-top: 0.5rem;">
+                <button type="submit" class="btn-submit-custom">
+                  <i class="fa-brands fa-whatsapp"></i> WhatsApp ilə Sifarişi Göndər
+                </button>
+              </div>
+            </div>
+          </form>
+          <div id="customOrderFeedback" style="margin-top: 1rem; font-size: 0.9rem; text-align: center;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       SİFARİŞ PROSESİ (ORDERING PROCESS STEPS)
+       ========================================================================== -->
+  <section class="process-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="section-tag">Addımlar</span>
+        <h2>Sifarişiniz çox asandır</h2>
+        <p>Cəmi 4 addımda zövqünüzə uyğun tort qapınızda.</p>
+      </div>
+
+      <div class="process-grid">
+        <div class="process-step-card">
+          <span class="step-number">01</span>
+          <h3>Tortu seçin</h3>
+          <p>Kataloqumuzdan bəyəndiyiniz hazır modeli seçin və ya fərdi dizayn istəyinizi müəyyən edin.</p>
+        </div>
+
+        <div class="process-step-card">
+          <span class="step-number">02</span>
+          <h3>Ölçü və dizaynı bildirin</h3>
+          <p>Çəkini, nəfər sayını, dadını və arzuladığınız bəzək detallarını bizə təqdim edin.</p>
+        </div>
+
+        <div class="process-step-card">
+          <span class="step-number">03</span>
+          <h3>Sifarişi təsdiqləyin</h3>
+          <p>Menecerimiz sizinlə WhatsApp üzərindən əlaqə saxlayıb vaxt və detalları son dəqiqləşdirsin.</p>
+        </div>
+
+        <div class="process-step-card">
+          <span class="step-number">04</span>
+          <h3>Tortunuzu təhvil alın</h3>
+          <p>Təzə, səliqəli və zərif qutulanmış tortunuz təyin olunan saatda ünvanınıza çatdırılsın.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       HAQQIMIZDA BÖLMƏSİ (ABOUT US)
+       ========================================================================== -->
+  <section class="about-section" id="about">
+    <div class="container">
+      <div class="about-grid">
+        <div class="about-image-card">
+          <img src="https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=1000&q=80" alt="Sweet Bakery Artisan Hazırlıq Prosesi" loading="lazy" />
+        </div>
+
+        <div class="about-content">
+          <span class="section-tag">Fəlsəfəmiz</span>
+          <h2>Təbii dadlardan ilham alaraq, sizin üçün hazırlayırıq.</h2>
+          <p>
+            Sweet Bakery olaraq hər bir tortu sadəcə şirniyyat deyil, sizin ən dəyərli günlərinizin unudulmaz bəzəyi kimi hazırlayırıq. 
+            Süni qatqılardan, kimyəvi dadlandırıcılardan qətiyyətlə uzaq dururuq.
+          </p>
+          <p>
+            100% təbii kərə yağı, yüksək keyfiyyətli Belçika şokoladı və təzə giləmeyvələrlə yoğrulmuş xüsusi reseptlərimiz hər tikədə fərqi hiss etdirir. 
+            İstər zərif bir ad günü, istərsə də dəbdəbəli bir toy məclisi olsun — sevgi ilə xidmətinizdəyik.
+          </p>
+          <div>
+            <a href="#custom-order" class="btn-primary-burgundy">
+              Fərdi sifarişinizi verin <i class="fa-solid fa-arrow-right"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================================================
+       FOOTER
+       ========================================================================== -->
+  <footer class="site-footer" id="contact">
+    <div class="container">
+      <div class="footer-grid">
+        <!-- Brend və İzah -->
+        <div class="footer-brand">
+          <a href="index.html" class="brand-logo" style="margin-bottom: 1.2rem;">
+            <div class="logo-badge">🍰</div>
+            <span style="color:#fff;">Sweet Bakery</span>
+          </a>
+          <p>
+            Bakının zərif artisan patisserie brendi. Hər bir sifariş üçün sevgi, estetika və yüksək keyfiyyətlə hazırlanmış xüsusi tortlar.
+          </p>
+        </div>
+
+        <!-- Tez Keçidlər -->
+        <div class="footer-col">
+          <h4>Naviqasiya</h4>
+          <div class="footer-links-list">
+            <a href="#hero">Ana səhifə</a>
+            <a href="#categories">Kateqoriyalar</a>
+            <a href="#catalogue">Tort Kataloqu</a>
+            <a href="#custom-order">Fərdi Sifariş</a>
+            <a href="#about">Haqqımızda</a>
+          </div>
+        </div>
+
+        <!-- Kateqoriyalar -->
+        <div class="footer-col">
+          <h4>Kolleksiyalar</h4>
+          <div class="footer-links-list">
+            <a href="#catalogue" onclick="selectCategoryByName('Şokoladlı tortlar')">Şokoladlı tortlar</a>
+            <a href="#catalogue" onclick="selectCategoryByName('Ad günü tortları')">Ad günü tortları</a>
+            <a href="#catalogue" onclick="selectCategoryByName('Nişan və toy tortları')">Nişan və toy tortları</a>
+            <a href="#catalogue" onclick="selectCategoryByName('Fərdi dizaynlı tortlar')">Fərdi dizaynlı tortlar</a>
+          </div>
+        </div>
+
+        <!-- Əlaqə və Ünvan -->
+        <div class="footer-col">
+          <h4>Əlaqə</h4>
+          <div class="footer-contacts">
+            <a href="https://wa.me/994703676561" target="_blank" rel="noopener noreferrer" style="color:#25d366; font-weight: 700;">
+              <i class="fa-brands fa-whatsapp"></i> WhatsApp: 070 367 65 61
+            </a>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer">
+              <i class="fa-brands fa-instagram"></i> @sweetbakery.az
+            </a>
+            <a href="#contact">
+              <i class="fa-solid fa-location-dot"></i> Bakı şəhəri, Azərbaycan
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <p>© 2026 Sweet Bakery. Bütün hüquqlar qorunur.</p>
+        <p>Premium Patisserie & Artisan Cakes ✨</p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==========================================================================
+       1. MƏHSULA TAM ŞƏKİLDƏ BAXIŞ MODALI (QUICK VIEW)
+       ========================================================================== -->
+  <div id="productDetailModal" class="modal-backdrop">
+    <div class="quickview-modal-box">
+      <button class="modal-close-btn" onclick="closeProductModal()" aria-label="Bağla">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="quickview-media">
+        <img id="detailImg" src="" alt="Tort Şəkli" />
+      </div>
+
+      <div class="quickview-content">
+        <span class="quickview-badge" id="detailCat">Kateqoriya</span>
+        <h2 id="detailName">Tort Adı</h2>
+        <div class="quickview-price" id="detailPrice">Kiloqramı: 0 AZN</div>
+        <p class="quickview-desc" id="detailDesc">Tortun inqrediyentləri və təsviri...</p>
+
+        <div class="weight-selector-wrap">
+          <label>Çəki (kq):</label>
+          <div class="weight-control-box">
+            <button class="weight-btn" onclick="changeDetailQty(-0.5)">-</button>
+            <span class="weight-val" id="detailQty">1 kq</span>
+            <button class="weight-btn" onclick="changeDetailQty(0.5)">+</button>
+          </div>
+        </div>
+
+        <div class="quickview-actions">
+          <button id="modalAddToCartBtn" class="btn-primary-burgundy" style="justify-content: center; width: 100%;">
             <i class="fa-solid fa-basket-shopping"></i> Səbətə Əlavə Et
           </button>
-          <button id="modalFavBtn" class="btn-outline" style="padding: 0.85rem 1.1rem;" title="Sevimlilərə at">
+          <button id="modalFavBtn" class="icon-action-btn" title="İstək siyahısına at" aria-label="Sevimlilər">
             <i class="fa-regular fa-heart"></i>
           </button>
         </div>
@@ -229,20 +583,20 @@
     </div>
   </div>
 
-  <!-- ==============================================
+  <!-- ==========================================================================
        2. SƏBƏT YAN PANELİ (CART DRAWER)
-       ============================================== -->
+       ========================================================================== -->
   <div id="cartDrawerBackdrop" class="cart-drawer-backdrop">
     <div class="cart-drawer">
       <div class="cart-drawer-header">
-        <h3><i class="fa-solid fa-basket-shopping" style="color: var(--dusty-rose);"></i> Səbətiniz</h3>
-        <button class="modal-close-btn" style="position: static;" onclick="closeCartDrawer()">
+        <h3><i class="fa-solid fa-basket-shopping" style="color: var(--primary-burgundy);"></i> Səbətiniz</h3>
+        <button class="modal-close-btn" style="position: static;" onclick="closeCartDrawer()" aria-label="Bağla">
           <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
       <div class="cart-items-body" id="cartItemsContainer">
-        <!-- Dinamik səbət məhsulları -->
+        <!-- Dinamik səbət məhsulları app.js ilə yüklənir -->
       </div>
 
       <div class="cart-drawer-footer">
@@ -250,49 +604,49 @@
           <span>Yekun Məbləğ:</span>
           <span class="subtotal-val" id="cartTotalPrice">0 AZN</span>
         </div>
-        <a id="cartWhatsAppOrderBtn" href="#" target="_blank" class="btn-whatsapp-checkout">
+        <a id="cartWhatsAppOrderBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn-cart-whatsapp">
           <i class="fa-brands fa-whatsapp"></i> Sifarişi WhatsApp ilə Göndər
         </a>
       </div>
     </div>
   </div>
 
-  <!-- ==============================================
-       3. SEVİMLİLƏR (WISHLIST) MODALI
-       ============================================== -->
-  <div id="wishlistModal" class="product-modal-backdrop">
+  <!-- ==========================================================================
+       3. İSTƏK SİYAHISI (WISHLIST) MODALI
+       ========================================================================== -->
+  <div id="wishlistModal" class="modal-backdrop">
     <div class="wishlist-modal-box">
-      <button class="modal-close-btn" onclick="closeWishlistModal()">
+      <button class="modal-close-btn" onclick="closeWishlistModal()" aria-label="Bağla">
         <i class="fa-solid fa-xmark"></i>
       </button>
 
-      <h3 style="font-size: 1.4rem; color: var(--choco-dark); display: flex; align-items: center; gap: 0.6rem;">
-        <i class="fa-solid fa-heart" style="color: #e63946;"></i> Sevimli Tortlarınız
+      <h3 style="font-size: 1.5rem; color: var(--text-dark); display: flex; align-items: center; gap: 0.6rem;">
+        <i class="fa-solid fa-heart" style="color: #e63946;"></i> İstək Siyahınız
       </h3>
-      <p style="color: var(--choco-muted); font-size: 0.88rem; margin-top: 0.3rem;">Bəyəndiyiniz tortları buradan birbaşa səbətə ata bilərsiniz.</p>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.3rem;">Bəyəndiyiniz tortları buradan birbaşa səbətə əlavə edə bilərsiniz.</p>
 
       <div class="wishlist-items-list" id="wishlistContainer">
-        <!-- Dinamik sevimlilər siyahısı -->
+        <!-- Dinamik favorilər siyahısı -->
       </div>
     </div>
   </div>
 
-  <!-- ==============================================
+  <!-- ==========================================================================
        4. VAHİD GİRİŞ & QEYDİYYAT POP-UP (AUTH MODAL)
-       ============================================== -->
-  <div id="authModal" class="auth-modal-backdrop">
+       ========================================================================== -->
+  <div id="authModal" class="modal-backdrop">
     <div class="auth-modal-box">
-      <button class="modal-close-btn" id="closeAuthModalBtn">
+      <button class="modal-close-btn" id="closeAuthModalBtn" aria-label="Bağla">
         <i class="fa-solid fa-xmark"></i>
       </button>
 
-      <div class="brand-logo" style="justify-content: center; margin-bottom: 1.2rem;">
-        <div class="logo-icon">🍰</div>
+      <div class="brand-logo" style="justify-content: center; margin-bottom: 1.5rem;">
+        <div class="logo-badge">🍰</div>
         <span>Sweet Bakery</span>
       </div>
 
       <!-- Tab Seçimləri: Giriş və Qeydiyyat -->
-      <div class="auth-tabs">
+      <div class="auth-tabs-wrap">
         <button class="auth-tab-btn active" id="tabLoginBtn" onclick="switchAuthTab('login')">
           <i class="fa-solid fa-arrow-right-to-bracket"></i> Daxil Ol
         </button>
@@ -304,17 +658,17 @@
       <!-- 1. Daxil Ol Formu -->
       <div id="loginPanel" class="auth-form-panel active">
         <form id="userLoginForm">
-          <div class="form-group" style="margin-bottom: 1rem;">
+          <div class="form-field-group" style="margin-bottom: 1rem;">
             <label for="loginEmail">E-poçt ünvanı</label>
             <input type="email" id="loginEmail" placeholder="adınız@example.com" required />
           </div>
 
-          <div class="form-group" style="margin-bottom: 1.4rem;">
+          <div class="form-field-group" style="margin-bottom: 1.4rem;">
             <label for="loginPassword">Şifrə</label>
             <input type="password" id="loginPassword" placeholder="••••••••" required />
           </div>
 
-          <button type="submit" class="btn-contact" style="width: 100%; justify-content: center; padding: 0.85rem; font-size: 1rem; border: none; cursor: pointer;">
+          <button type="submit" class="btn-primary-burgundy" style="width: 100%; justify-content: center; padding: 0.85rem;">
             Daxil Ol <i class="fa-solid fa-arrow-right-to-bracket"></i>
           </button>
         </form>
@@ -323,22 +677,22 @@
       <!-- 2. Qeydiyyat Formu -->
       <div id="registerPanel" class="auth-form-panel">
         <form id="userRegisterForm">
-          <div class="form-group" style="margin-bottom: 0.9rem;">
+          <div class="form-field-group" style="margin-bottom: 0.9rem;">
             <label for="regFullName">Ad və Soyad</label>
             <input type="text" id="regFullName" placeholder="Aysel Məmmədova" required />
           </div>
 
-          <div class="form-group" style="margin-bottom: 0.9rem;">
+          <div class="form-field-group" style="margin-bottom: 0.9rem;">
             <label for="regEmail">E-poçt ünvanı</label>
             <input type="email" id="regEmail" placeholder="adınız@example.com" required />
           </div>
 
-          <div class="form-group" style="margin-bottom: 1.4rem;">
+          <div class="form-field-group" style="margin-bottom: 1.4rem;">
             <label for="regPassword">Şifrə (ən azı 6 simvol)</label>
             <input type="password" id="regPassword" placeholder="••••••••" minlength="6" required />
           </div>
 
-          <button type="submit" class="btn-contact" style="width: 100%; justify-content: center; padding: 0.85rem; font-size: 1rem; border: none; cursor: pointer;">
+          <button type="submit" class="btn-primary-burgundy" style="width: 100%; justify-content: center; padding: 0.85rem;">
             Hesab Yarat <i class="fa-solid fa-check"></i>
           </button>
         </form>
