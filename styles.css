@@ -1200,6 +1200,30 @@ img {
   box-shadow: 0 0 0 3px var(--burgundy-subtle);
 }
 
+.input-unit-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.input-unit-wrap input {
+  padding-right: 3.8rem !important;
+}
+
+.input-unit-tag {
+  position: absolute;
+  right: 0.9rem;
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--primary-burgundy);
+  background: var(--soft-pink);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-sm);
+  pointer-events: none;
+  border: 1px solid var(--border-warm);
+}
+
 .file-upload-box {
   border: 1.5px dashed var(--border-warm);
   background: var(--white);

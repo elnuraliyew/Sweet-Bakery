@@ -346,19 +346,15 @@
 
               <div class="form-field-group">
                 <label for="customDate">Hansı tarixə lazımdır? *</label>
-                <input type="date" id="customDate" required />
+                <input type="text" id="customDate" placeholder="Məsələn: 1 yanvar və ya 15 oktyabr" required />
               </div>
 
               <div class="form-field-group">
-                <label for="customSize">Tortun ölçüsü / Nəfər sayı *</label>
-                <select id="customSize" required>
-                  <option value="">Ölçü seçin...</option>
-                  <option value="1.5 kq (6-8 nəfərlik)">1.5 kq (6-8 nəfərlik)</option>
-                  <option value="2.0 kq (10-12 nəfərlik)">2.0 kq (10-12 nəfərlik)</option>
-                  <option value="3.0 kq (15-18 nəfərlik)">3.0 kq (15-18 nəfərlik)</option>
-                  <option value="4.0+ kq (20+ nəfərlik)">4.0+ kq (20+ nəfərlik)</option>
-                  <option value="Mərtəbəli Toy / Nişan Tortu">Mərtəbəli Toy / Nişan Tortu</option>
-                </select>
+                <label for="customSize">Tortun çəkisi (kq ilə) *</label>
+                <div class="input-unit-wrap">
+                  <input type="number" id="customSize" step="0.1" min="0.5" max="50" placeholder="Məsələn: 1.2" required />
+                  <span class="input-unit-tag">kq</span>
+                </div>
               </div>
 
               <div class="form-field-group full-width">

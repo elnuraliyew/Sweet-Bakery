@@ -645,6 +645,20 @@ function initCustomOrderForm() {
   const fileNameText = document.getElementById('customFileName');
   const feedback = document.getElementById('customOrderFeedback');
 
+  const sizeInput = document.getElementById('customSize');
+  if (sizeInput) {
+    // 1.2 kq yazmaq olar, amma 1.212 kimi 1-dən çox kəsr rəqəmi yazmağa icazə verilmir
+    sizeInput.addEventListener('input', () => {
+      let val = sizeInput.value;
+      if (val.includes('.')) {
+        const parts = val.split('.');
+        if (parts[1].length > 1) {
+          sizeInput.value = `${parts[0]}.${parts[1].slice(0, 1)}`;
+        }
+      }
+    });
+  }
+
   if (fileInput && fileNameText) {
     fileInput.addEventListener('change', () => {
       if (fileInput.files && fileInput.files[0]) {
@@ -661,16 +675,21 @@ function initCustomOrderForm() {
 
       const name = document.getElementById('customName').value.trim();
       const phone = document.getElementById('customPhone').value.trim();
-      const date = document.getElementById('customDate').value;
-      const size = document.getElementById('customSize').value;
+      const date = document.getElementById('customDate').value.trim();
+      const rawSize = document.getElementById('customSize').value.trim();
       const flavor = document.getElementById('customFlavor').value;
       const design = document.getElementById('customDesign').value.trim();
       const notes = document.getElementById('customNotes').value.trim();
 
-      if (!name || !phone || !date || !size || !flavor) {
-        showToast('Zəhmət olmasa ulduzlu (*) bütün vacib sahələri doldurun.', true);
+      const numSize = parseFloat(rawSize);
+
+      if (!name || !phone || !date || !rawSize || isNaN(numSize) || numSize <= 0 || !flavor) {
+        showToast('Zəhmət olmasa ulduzlu (*) bütün vacib sahələri düzgün doldurun.', true);
         return;
       }
+
+      // Kəsr hissəsini maksimum 1 rəqəm olaraq dəqiqləşdiririk (məs: 1.2 kq)
+      const size = `${numSize.toFixed(1)} kq`;
 
       feedback.innerHTML = '<span style="color:var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Sifariş hazırlanır...</span>';
 
