@@ -109,8 +109,9 @@ img {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
   z-index: -1;
   pointer-events: none;
   overflow: hidden;
@@ -2166,109 +2167,245 @@ img {
   }
 }
 
-/* Smartfonlar (Mobile Devices) */
+/* ==========================================================================
+   SMARTFONLAR VƏ MOBİL CİHAZLAR (MOBILE APP EXPERIENCE)
+   ========================================================================== */
 @media (max-width: 768px) {
+  /* Ümumi baza */
+  body {
+    overflow-x: hidden;
+  }
+
+  .container {
+    padding: 0 1rem;
+    max-width: 100%;
+  }
+
+  /* Header & Naviqasiya */
+  .site-header {
+    background: rgba(255, 249, 245, 0.98);
+  }
+
   .site-header .header-nav {
     display: none;
   }
 
   .mobile-menu-toggle {
     display: flex;
+    width: 38px;
+    height: 38px;
+    font-size: 1.05rem;
+    flex-shrink: 0;
   }
 
   .header-container {
-    height: 70px;
+    height: 62px;
+    padding: 0 1rem;
+    gap: 0.5rem;
   }
 
   .brand-logo {
-    font-size: 1.3rem;
+    font-size: 1.2rem;
+    gap: 0.45rem;
   }
 
   .logo-badge {
     width: 32px;
     height: 32px;
-    font-size: 1rem;
+    font-size: 0.95rem;
+  }
+
+  .header-actions {
+    gap: 0.4rem;
+  }
+
+  .icon-action-btn {
+    width: 38px;
+    height: 38px;
+    font-size: 0.95rem;
+  }
+
+  .icon-badge {
+    top: -3px;
+    right: -3px;
+    width: 17px;
+    height: 17px;
+    font-size: 0.65rem;
+  }
+
+  /* Giriş mobil drawer daxilində (#mobileAuthZone) göstərilir */
+  .user-auth-zone {
+    display: none !important;
+  }
+
+  /* WhatsApp ikonu mobildə yığcam dairəvi */
+  .btn-header-whatsapp {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: 50%;
+    justify-content: center;
+    box-shadow: none;
+    flex-shrink: 0;
   }
 
   .btn-header-whatsapp span {
     display: none;
   }
 
-  .btn-header-whatsapp {
-    padding: 0.6rem 0.8rem;
+  .btn-header-whatsapp i {
+    font-size: 1.15rem;
   }
 
-  .btn-header-login span {
-    display: none;
-  }
-
-  .btn-header-login {
-    padding: 0.55rem 0.75rem;
-  }
-
+  /* Hero Bölməsi */
   .hero-section {
-    padding: 2.5rem 0 3.5rem;
+    padding: 1.8rem 0 2.2rem;
+  }
+
+  .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 1.8rem;
+    text-align: left;
+  }
+
+  .hero-content {
+    max-width: 100%;
+  }
+
+  .hero-overtitle {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.45rem;
   }
 
   .hero-title {
-    font-size: 2.4rem;
+    font-size: 1.95rem;
+    line-height: 1.22;
+    margin-bottom: 0.8rem;
   }
 
   .hero-desc {
-    font-size: 1rem;
-    margin-bottom: 1.8rem;
+    font-size: 0.92rem;
+    line-height: 1.55;
+    margin-bottom: 1.4rem;
   }
 
   .hero-btn-group {
     flex-direction: column;
     width: 100%;
+    gap: 0.75rem;
   }
 
   .hero-btn-group a {
     width: 100%;
     justify-content: center;
+    padding: 0.75rem 1.2rem;
+    font-size: 0.92rem;
+  }
+
+  .hero-image-wrap {
+    width: 100%;
   }
 
   .hero-image-card img {
-    height: 320px;
+    height: 240px;
+    object-fit: cover;
   }
 
   .hero-floating-card {
-    left: 10px;
-    bottom: -15px;
-    padding: 0.85rem 1rem;
+    position: static;
+    margin-top: 0.8rem;
+    max-width: 100%;
+    transform: none;
+    padding: 0.8rem 1rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Üstünlüklər (2x2 Grid) */
+  .benefits-section {
+    padding: 1.5rem 0;
   }
 
   .benefits-grid {
-    grid-template-columns: 1fr;
-    gap: 1.5rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .benefit-card {
+    padding: 0.95rem 0.75rem;
+    gap: 0.45rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .benefit-icon {
+    width: 36px;
+    height: 36px;
+    font-size: 1rem;
+    margin-bottom: 0.1rem;
+  }
+
+  .benefit-card h3 {
+    font-size: 0.82rem;
+    line-height: 1.3;
+  }
+
+  .benefit-card p {
+    display: none;
+  }
+
+  /* Kateqoriyalar (2x2 Grid) */
+  .categories-section {
+    padding: 2.8rem 0;
   }
 
   .categories-grid {
-    grid-template-columns: 1fr;
-    gap: 1.2rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
+  }
+
+  .category-card {
+    border-radius: var(--radius-md);
   }
 
   .category-image-wrap {
-    height: 200px;
+    height: 125px;
+  }
+
+  .category-title-banner {
+    padding: 0.65rem 0.5rem;
+  }
+
+  .category-title-banner h3 {
+    font-size: 0.85rem;
+  }
+
+  /* Seçilmiş Məhsullar (Kataloq - Zərif 2-Sütunlu E-Ticarət Grid-i) */
+  .catalogue-section {
+    padding: 2.8rem 0;
   }
 
   .catalogue-top-row {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.8rem;
+    margin-bottom: 1.2rem;
   }
 
   .catalogue-top-row h2 {
-    font-size: 2rem;
+    font-size: 1.85rem;
   }
 
   .filter-pills-wrap {
     flex-wrap: nowrap;
     overflow-x: auto;
-    padding-bottom: 0.5rem;
+    padding-bottom: 0.6rem;
+    margin-bottom: 1.4rem;
     scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    width: 100%;
   }
 
   .filter-pills-wrap::-webkit-scrollbar {
@@ -2277,77 +2414,309 @@ img {
 
   .filter-pill {
     flex-shrink: 0;
+    padding: 0.45rem 1rem;
+    font-size: 0.84rem;
   }
 
   .products-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.75rem;
+  }
+
+  .product-card {
+    border-radius: var(--radius-md);
   }
 
   .card-image-box {
-    height: 160px;
+    height: 145px;
+  }
+
+  .card-category-badge {
+    top: 0.45rem;
+    left: 0.45rem;
+    padding: 0.2rem 0.5rem;
+    font-size: 0.65rem;
+  }
+
+  .card-fav-btn {
+    top: 0.45rem;
+    right: 0.45rem;
+    width: 30px;
+    height: 30px;
+    font-size: 0.82rem;
   }
 
   .card-content {
-    padding: 0.9rem;
+    padding: 0.75rem 0.65rem;
   }
 
   .card-content h3 {
-    font-size: 0.98rem;
+    font-size: 0.88rem;
+    line-height: 1.3;
+    margin-bottom: 0.25rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .card-content p {
+    display: none;
   }
 
   .card-footer-row {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 0.6rem;
+    align-items: stretch;
+    gap: 0.45rem;
+    margin-top: 0.45rem;
+  }
+
+  .card-price-tag {
+    font-size: 0.95rem;
+  }
+
+  .card-price-tag span {
+    font-size: 0.68rem;
   }
 
   .btn-card-order {
     width: 100%;
     justify-content: center;
+    padding: 0.45rem 0.5rem;
+    font-size: 0.76rem;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Fərdi Sifariş Formu */
+  .custom-order-section {
+    padding: 2.8rem 0;
+  }
+
+  .custom-order-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .custom-order-info h2 {
+    font-size: 1.85rem;
+  }
+
+  .custom-order-info p {
+    font-size: 0.92rem;
+    margin-bottom: 1.4rem;
+  }
+
+  .custom-highlights-list {
+    gap: 0.85rem;
+    margin-bottom: 1.8rem;
+  }
+
+  .custom-order-card {
+    padding: 1.5rem 1.1rem;
+    border-radius: var(--radius-md);
   }
 
   .custom-form-grid {
     grid-template-columns: 1fr;
+    gap: 1rem;
   }
 
-  .custom-order-card {
-    padding: 1.6rem 1.2rem;
+  .form-field-group input,
+  .form-field-group select,
+  .form-field-group textarea {
+    padding: 0.65rem 0.85rem;
+    font-size: 0.9rem;
+  }
+
+  .btn-submit-custom {
+    padding: 0.85rem;
+    font-size: 0.95rem;
+  }
+
+  /* Addımlar (Sifariş Prosesi) */
+  .process-section {
+    padding: 2.8rem 0;
   }
 
   .process-grid {
     grid-template-columns: 1fr;
-    gap: 1.2rem;
+    gap: 1rem;
+  }
+
+  .process-card {
+    padding: 1.4rem 1.2rem;
+  }
+
+  /* Haqqımızda */
+  .about-section {
+    padding: 2.8rem 0;
+  }
+
+  .about-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    text-align: left;
   }
 
   .about-content h2 {
-    font-size: 2.1rem;
+    font-size: 1.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .about-content p {
+    font-size: 0.92rem;
+    line-height: 1.6;
+    margin-bottom: 1.4rem;
   }
 
   .about-image-card img {
-    height: 280px;
+    height: 240px;
+    object-fit: cover;
+  }
+
+  /* Footer */
+  .site-footer {
+    padding: 3.5rem 0 2rem;
   }
 
   .footer-grid {
     grid-template-columns: 1fr;
     gap: 2rem;
+    padding-bottom: 2rem;
   }
 
+  .footer-bottom {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.8rem;
+  }
+
+  /* Modallar & Quick View */
+  .modal-backdrop {
+    padding: 0.75rem;
+  }
+
+  .quickview-modal-box {
+    grid-template-columns: 1fr;
+    max-height: 88vh;
+    overflow-y: auto;
+    border-radius: var(--radius-lg);
+    width: 100%;
+    margin: 0;
+  }
+
+  .quickview-media {
+    min-height: 210px;
+    height: 210px;
+  }
+
+  .quickview-content {
+    padding: 1.4rem 1.1rem;
+  }
+
+  .quickview-content h2 {
+    font-size: 1.45rem;
+  }
+
+  .quickview-price {
+    font-size: 1.35rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .quickview-desc {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    margin-bottom: 1.2rem;
+  }
+
+  .weight-selector-wrap {
+    margin-bottom: 1.4rem;
+  }
+
+  /* Cart & Wishlist Drawers */
   .cart-drawer {
+    width: 100%;
     max-width: 100%;
   }
 
+  .cart-drawer-header {
+    padding: 1.2rem 1.1rem;
+  }
+
+  .cart-drawer-body {
+    padding: 1.1rem;
+  }
+
+  .cart-drawer-footer {
+    padding: 1.2rem 1.1rem;
+  }
+
+  /* Auth Modalı */
   .auth-modal-box {
-    padding: 2rem 1.4rem;
+    padding: 1.8rem 1.2rem;
+    border-radius: var(--radius-lg);
+    margin: 0.5rem;
+  }
+
+  .auth-modal-box h3 {
+    font-size: 1.4rem;
   }
 }
 
+/* Kiçik Smartfonlar (320px - 480px) */
 @media (max-width: 480px) {
-  .products-grid {
-    grid-template-columns: 1fr;
+  .header-container {
+    height: 58px;
+    padding: 0 0.75rem;
   }
+
+  .brand-logo {
+    font-size: 1.08rem;
+    gap: 0.35rem;
+  }
+
+  .logo-badge {
+    width: 28px;
+    height: 28px;
+    font-size: 0.88rem;
+  }
+
+  .header-actions {
+    gap: 0.35rem;
+  }
+
+  .icon-action-btn,
+  .mobile-menu-toggle,
+  .btn-header-whatsapp {
+    width: 34px;
+    height: 34px;
+  }
+
+  .products-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.55rem;
+  }
+
   .card-image-box {
-    height: 200px;
+    height: 130px;
+  }
+
+  .card-content {
+    padding: 0.6rem 0.5rem;
+  }
+
+  .card-content h3 {
+    font-size: 0.82rem;
+  }
+
+  .card-price-tag {
+    font-size: 0.88rem;
+  }
+
+  .btn-card-order {
+    padding: 0.42rem 0.3rem;
+    font-size: 0.72rem;
   }
 }
 

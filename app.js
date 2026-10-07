@@ -51,14 +51,15 @@ function showToast(text, isError = false) {
   toast.innerHTML = `<i class="fa-solid ${isError ? 'fa-circle-xmark' : 'fa-circle-check'}"></i> ${text}`;
   toast.style.cssText = `
     position: fixed;
-    bottom: 25px;
-    right: 25px;
+    bottom: 20px;
+    right: 20px;
+    max-width: calc(100vw - 40px);
     background: ${isError ? '#7B303C' : '#963F4D'};
     color: #fff;
-    padding: 0.95rem 1.6rem;
+    padding: 0.85rem 1.4rem;
     border-radius: 999px;
     font-weight: 600;
-    font-size: 0.92rem;
+    font-size: 0.88rem;
     box-shadow: 0 10px 30px rgba(48, 33, 31, 0.25);
     z-index: 100000;
     display: flex;
@@ -66,6 +67,7 @@ function showToast(text, isError = false) {
     gap: 0.65rem;
     animation: fadeIn 0.3s ease;
     border: 1px solid rgba(255, 255, 255, 0.2);
+    box-sizing: border-box;
   `;
   document.body.appendChild(toast);
   setTimeout(() => toast.remove(), 3500);
@@ -915,41 +917,80 @@ function isAdminUser(user) {
 
 function updateNavbarAuthState(user) {
   const authArea = document.getElementById('authNavZone');
-  if (!authArea) return;
+  const mobileAuth = document.getElementById('mobileAuthZone');
 
   if (user) {
     const isUserAdmin = isAdminUser(user);
     const displayName = user.displayName || user.email.split('@')[0];
 
-    authArea.innerHTML = `
-      <div class="user-logged-badge">
-        <i class="fa-regular fa-user" style="color:var(--primary-burgundy);"></i>
-        <span>${displayName}</span>
-      </div>
-      
-      ${isUserAdmin ? `
-        <a href="admin.html" class="btn-admin-pill" title="İdarəetmə Panelinə Keçid">
-          <i class="fa-solid fa-crown"></i> Admin
-        </a>
-      ` : ''}
+    if (authArea) {
+      authArea.innerHTML = `
+        <div class="user-logged-badge">
+          <i class="fa-regular fa-user" style="color:var(--primary-burgundy);"></i>
+          <span>${displayName}</span>
+        </div>
+        
+        ${isUserAdmin ? `
+          <a href="admin.html" class="btn-admin-pill" title="İdarəetmə Panelinə Keçid">
+            <i class="fa-solid fa-crown"></i> Admin
+          </a>
+        ` : ''}
 
-      <button id="navLogoutBtn" class="icon-action-btn" style="width:36px; height:36px; font-size:0.9rem;" title="Çıxış">
-        <i class="fa-solid fa-right-from-bracket"></i>
-      </button>
-    `;
+        <button id="navLogoutBtn" class="icon-action-btn" style="width:36px; height:36px; font-size:0.9rem;" title="Çıxış">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      `;
 
-    document.getElementById('navLogoutBtn').addEventListener('click', async () => {
-      await auth.signOut();
-      showToast('Sistemdən çıxış edildi.');
-    });
+      document.getElementById('navLogoutBtn')?.addEventListener('click', async () => {
+        await auth.signOut();
+        showToast('Sistemdən çıxış edildi.');
+      });
+    }
+
+    if (mobileAuth) {
+      mobileAuth.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:0.6rem;">
+          <div style="font-weight:700; color:var(--text-dark); display:flex; align-items:center; gap:0.5rem; font-size:0.95rem;">
+            <i class="fa-solid fa-circle-user" style="color:var(--primary-burgundy); font-size:1.2rem;"></i> ${displayName}
+          </div>
+          ${isUserAdmin ? `
+            <a href="admin.html" class="btn-primary-burgundy" style="width:100%; justify-content:center; padding:0.6rem; font-size:0.85rem; text-decoration:none;">
+              <i class="fa-solid fa-crown"></i> Admin Paneli
+            </a>
+          ` : ''}
+          <button id="mobileLogoutBtn" class="btn-outline" style="width:100%; justify-content:center; padding:0.55rem; font-size:0.85rem;">
+            <i class="fa-solid fa-right-from-bracket"></i> Çıxış Et
+          </button>
+        </div>
+      `;
+
+      document.getElementById('mobileLogoutBtn')?.addEventListener('click', async () => {
+        await auth.signOut();
+        showToast('Sistemdən çıxış edildi.');
+      });
+    }
 
   } else {
-    authArea.innerHTML = `
-      <button id="openAuthModalBtn" class="btn-header-login">
-        <i class="fa-regular fa-user"></i>
-        <span>Giriş</span>
-      </button>
-    `;
-    document.getElementById('openAuthModalBtn').addEventListener('click', () => openAuthModal('login'));
+    if (authArea) {
+      authArea.innerHTML = `
+        <button id="openAuthModalBtn" class="btn-header-login">
+          <i class="fa-regular fa-user"></i>
+          <span>Giriş</span>
+        </button>
+      `;
+      document.getElementById('openAuthModalBtn')?.addEventListener('click', () => openAuthModal('login'));
+    }
+
+    if (mobileAuth) {
+      mobileAuth.innerHTML = `
+        <button id="mobileOpenAuthBtn" class="btn-primary-burgundy" style="width:100%; justify-content:center; padding:0.65rem; font-size:0.88rem;">
+          <i class="fa-regular fa-user"></i> Daxil Ol / Qeydiyyat
+        </button>
+      `;
+      document.getElementById('mobileOpenAuthBtn')?.addEventListener('click', () => {
+        document.getElementById('mobileNavBackdrop')?.classList.remove('active');
+        openAuthModal('login');
+      });
+    }
   }
 }
