@@ -925,18 +925,18 @@ function updateNavbarAuthState(user) {
 
     if (authArea) {
       authArea.innerHTML = `
-        <div class="user-logged-badge">
-          <i class="fa-regular fa-user" style="color:var(--primary-burgundy);"></i>
-          <span>${displayName}</span>
-        </div>
-        
         ${isUserAdmin ? `
-          <a href="admin.html" class="btn-admin-pill" title="İdarəetmə Panelinə Keçid">
+          <a href="admin.html" class="btn-admin-pill" title="İdarəetmə Panelinə Keçid (${displayName})">
             <i class="fa-solid fa-crown"></i> Admin
           </a>
-        ` : ''}
+        ` : `
+          <div class="user-logged-badge" title="${displayName}">
+            <i class="fa-regular fa-user" style="color:var(--primary-burgundy);"></i>
+            <span>${displayName}</span>
+          </div>
+        `}
 
-        <button id="navLogoutBtn" class="icon-action-btn" style="width:36px; height:36px; font-size:0.9rem;" title="Çıxış">
+        <button id="navLogoutBtn" class="icon-action-btn" style="width:36px; height:36px; font-size:0.9rem;" title="Çıxış (${displayName})">
           <i class="fa-solid fa-right-from-bracket"></i>
         </button>
       `;
