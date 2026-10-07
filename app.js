@@ -40,6 +40,17 @@ function getProductCode(prod) {
   return `SB-${codeNum}`;
 }
 
+// XSS (Cross-Site Scripting) Təhlükəsizlik Filtrləməsi
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 let currentCategory = 'all';
 let productsList = [];
 let categoriesList = [];
@@ -415,25 +426,25 @@ function renderProducts() {
     card.dataset.id = prod.id;
 
     card.innerHTML = `
-      <div class="card-image-box" onclick="openProductDetail('${prod.id}')">
-        <img src="${prod.imageUrl}" alt="${prod.name}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80'" />
-        <span class="card-category-badge">${prod.categoryName || 'Eksklüziv'}</span>
-        <button class="card-fav-btn ${isFav ? 'active' : ''}" onclick="toggleWishlist('${prod.id}', event)" title="İstək siyahısına əlavə et" aria-label="Sevimlilər">
+      <div class="card-image-box" onclick="openProductDetail('${escapeHtml(prod.id)}')">
+        <img src="${escapeHtml(prod.imageUrl)}" alt="${escapeHtml(prod.name)}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80'" />
+        <span class="card-category-badge">${escapeHtml(prod.categoryName || 'Eksklüziv')}</span>
+        <button class="card-fav-btn ${isFav ? 'active' : ''}" onclick="toggleWishlist('${escapeHtml(prod.id)}', event)" title="İstək siyahısına əlavə et" aria-label="Sevimlilər">
           <i class="${isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}"></i>
         </button>
-        <button class="card-share-btn" onclick="shareProduct('${prod.id}', event)" title="Məhsulu Paylaş" aria-label="Paylaş">
+        <button class="card-share-btn" onclick="shareProduct('${escapeHtml(prod.id)}', event)" title="Məhsulu Paylaş" aria-label="Paylaş">
           <i class="fa-solid fa-share-nodes"></i>
         </button>
       </div>
       <div class="card-content">
         <div class="card-meta-line">
-          <span class="card-code-pill"><i class="fa-solid fa-barcode"></i> Kod: ${prodCode}</span>
+          <span class="card-code-pill"><i class="fa-solid fa-barcode"></i> Kod: ${escapeHtml(prodCode)}</span>
         </div>
-        <h3 onclick="openProductDetail('${prod.id}')">${prod.name}</h3>
-        <p onclick="openProductDetail('${prod.id}')">${prod.description}</p>
+        <h3 onclick="openProductDetail('${escapeHtml(prod.id)}')">${escapeHtml(prod.name)}</h3>
+        <p onclick="openProductDetail('${escapeHtml(prod.id)}')">${escapeHtml(prod.description)}</p>
         <div class="card-footer-row">
-          <div class="card-price-tag">${prod.price} <span>AZN / kq</span></div>
-          <button onclick="addToCart('${prod.id}', 1)" class="btn-card-order" title="Səbətə at">
+          <div class="card-price-tag">${Number(prod.price) || 0} <span>AZN / kq</span></div>
+          <button onclick="addToCart('${escapeHtml(prod.id)}', 1)" class="btn-card-order" title="Səbətə at">
             <i class="fa-solid fa-basket-shopping"></i> Sifariş et
           </button>
         </div>
@@ -515,7 +526,7 @@ window.closeProductModal = function() {
 };
 
 window.changeDetailQty = function(delta) {
-  currentDetailQty = Math.max(0.5, +(currentDetailQty + delta).toFixed(1));
+  currentDetailQty = Math.max(1.0, +(currentDetailQty + delta).toFixed(1));
   document.getElementById('detailQty').textContent = `${currentDetailQty} kq`;
   updateModalWhatsAppBtn();
 };
@@ -716,9 +727,12 @@ window.updateCartQty = function(productId, delta) {
   const item = cart.find(i => i.id === productId);
   if (!item) return;
 
-  item.qty = +(item.qty + delta).toFixed(1);
-  if (item.qty <= 0) {
+  const newQty = +(item.qty + delta).toFixed(1);
+  if (newQty < 1.0) {
     cart = cart.filter(i => i.id !== productId);
+    showToast(`"${item.name}" səbətdən çıxarıldı.`);
+  } else {
+    item.qty = newQty;
   }
 
   saveCart();
@@ -772,22 +786,22 @@ function renderCartDrawer() {
     const row = document.createElement('div');
     row.className = 'cart-item-row';
     row.innerHTML = `
-      <img src="${item.imageUrl}" class="cart-item-img" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=100&q=80'" />
+      <img src="${escapeHtml(item.imageUrl)}" class="cart-item-img" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=100&q=80'" />
       <div class="cart-item-info">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:0.4rem; margin-bottom:0.2rem;">
-          <h4 style="margin:0;">${item.name}</h4>
-          <span class="cart-item-code-tag">${itemCode}</span>
+          <h4 style="margin:0;">${escapeHtml(item.name)}</h4>
+          <span class="cart-item-code-tag">${escapeHtml(itemCode)}</span>
         </div>
-        <div class="item-unit-price">${item.price} AZN / kq</div>
+        <div class="item-unit-price">${Number(item.price) || 0} AZN / kq</div>
         <div class="cart-item-qty-ctrl">
-          <button onclick="updateCartQty('${item.id}', -0.5)">-</button>
+          <button onclick="updateCartQty('${escapeHtml(item.id)}', -0.5)">-</button>
           <span style="font-size:0.85rem; font-weight:700; min-width:32px; text-align:center;">${item.qty} kq</span>
-          <button onclick="updateCartQty('${item.id}', 0.5)">+</button>
+          <button onclick="updateCartQty('${escapeHtml(item.id)}', 0.5)">+</button>
         </div>
       </div>
       <div style="text-align: right;">
         <div style="font-weight:700; color:var(--primary-burgundy); font-size:1rem; margin-bottom:0.4rem;">${itemTotal} AZN</div>
-        <button onclick="removeFromCart('${item.id}')" style="background:none; border:none; color:#c5221f; cursor:pointer;" title="Sil">
+        <button onclick="removeFromCart('${escapeHtml(item.id)}')" style="background:none; border:none; color:#c5221f; cursor:pointer;" title="Sil">
           <i class="fa-solid fa-trash-can"></i>
         </button>
       </div>
@@ -862,19 +876,19 @@ function renderWishlistModal() {
     const row = document.createElement('div');
     row.className = 'cart-item-row';
     row.innerHTML = `
-      <img src="${item.imageUrl}" class="cart-item-img" />
+      <img src="${escapeHtml(item.imageUrl)}" class="cart-item-img" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=100&q=80'" />
       <div class="cart-item-info">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:0.4rem; margin-bottom:0.2rem;">
-          <h4 style="margin:0;">${item.name}</h4>
-          <span class="cart-item-code-tag">${itemCode}</span>
+          <h4 style="margin:0;">${escapeHtml(item.name)}</h4>
+          <span class="cart-item-code-tag">${escapeHtml(itemCode)}</span>
         </div>
-        <div style="font-weight:700; color:var(--primary-burgundy);">${item.price} AZN / kq</div>
+        <div style="font-weight:700; color:var(--primary-burgundy);">${Number(item.price) || 0} AZN / kq</div>
       </div>
       <div style="display:flex; gap:0.6rem; align-items:center;">
-        <button onclick="addToCart('${item.id}', 1); closeWishlistModal();" class="btn-card-order">
+        <button onclick="addToCart('${escapeHtml(item.id)}', 1); closeWishlistModal();" class="btn-card-order">
           <i class="fa-solid fa-basket-shopping"></i> Səbətə At
         </button>
-        <button onclick="toggleWishlist('${item.id}')" style="background:none; border:none; color:#c5221f; cursor:pointer; padding:0.4rem;" title="Sil">
+        <button onclick="toggleWishlist('${escapeHtml(item.id)}')" style="background:none; border:none; color:#c5221f; cursor:pointer; padding:0.4rem;" title="Sil">
           <i class="fa-solid fa-trash-can"></i>
         </button>
       </div>
@@ -949,6 +963,15 @@ function initCustomOrderForm() {
         return;
       }
 
+      // Anti-Spam və DoS mühafizəsi: Ardıcıl sifarişlər arasında minimum 25 saniyə fasilə
+      const lastOrderTime = parseInt(localStorage.getItem('sb_last_custom_order') || '0', 10);
+      const now = Date.now();
+      if (now - lastOrderTime < 25000) {
+        const remainingSec = Math.ceil((25000 - (now - lastOrderTime)) / 1000);
+        showToast(`Təhlükəsizlik: Növbəti sifariş üçün ${remainingSec} saniyə gözləməlisiniz.`, true);
+        return;
+      }
+
       // Kəsr hissəsini maksimum 1 rəqəm olaraq dəqiqləşdiririk (məs: 1.2 kq)
       const size = `${numSize.toFixed(1)} kq`;
 
@@ -986,6 +1009,7 @@ function initCustomOrderForm() {
 
       feedback.innerHTML = '<span style="color:#137333;"><i class="fa-solid fa-circle-check"></i> Sifarişiniz qeydə alındı! WhatsApp-a yönləndirilirsiniz...</span>';
       showToast('Sifariş qeydə alındı! WhatsApp açılır.');
+      localStorage.setItem('sb_last_custom_order', Date.now());
 
       // WhatsApp-a yönləndirmə
       setTimeout(() => {

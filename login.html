@@ -1,30 +1,138 @@
 <!DOCTYPE html>
 <html lang="az">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sweet Bakery – Giriş</title>
-    <link rel="stylesheet" href="styles.css" />
-    <!-- Firebase SDKs (Auth + Firestore) -->
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-    <script src="firebase-config.js"></script>
-    <script defer src="app.js"></script>
-</head>
-<body>
-    <!-- Full‑screen blurred background image -->
-    <div class="bg-image"></div>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sweet Bakery — Təhlükəsiz Giriş Portalı</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Glass‑morphism login card -->
-    <div class="login-card">
-        <h2>Sweet Bakery‑a xoş gəlmisiniz</h2>
-        <form id="loginForm">
-            <input type="email" id="email" placeholder="İstifadəçi adı (e‑mail)" required />
-            <input type="password" id="password" placeholder="Şifrə" required />
-            <button type="submit">Daxil ol</button>
-        </form>
-        <p id="errorMsg" class="error"></p>
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+</head>
+<body class="admin-body" style="display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 1.5rem; background: var(--bg-cream);">
+
+  <div class="auth-modal-box" style="margin: auto; max-width: 440px; box-shadow: 0 25px 60px rgba(48, 33, 31, 0.12); background: #ffffff;">
+    <div class="brand-logo" style="justify-content: center; margin-bottom: 1.5rem;">
+      <div class="logo-badge">🍰</div>
+      <span>Sweet <em>Bakery</em></span>
     </div>
+    <h2 style="font-size: 1.6rem; margin-bottom: 0.4rem; font-family: var(--font-serif); color: var(--text-dark);">Təhlükəsiz Giriş</h2>
+    <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 2rem;">Hesabınıza daxil olaraq sifarişlərinizi və ya idarəetmə panelini idarə edin.</p>
+
+    <form id="portalLoginForm">
+      <div class="form-group" style="margin-bottom: 1.1rem; text-align: left;">
+        <label for="portalEmail" style="display:block; margin-bottom:0.4rem; font-size:0.88rem; font-weight:600; color:var(--text-dark);">E-poçt ünvanı</label>
+        <input type="email" id="portalEmail" placeholder="admin@sweetbakery.az və ya istifadəçi e-poçtu" required style="width:100%; padding:0.85rem 1rem; border:1px solid var(--border-warm); border-radius:12px; font-size:0.95rem; box-sizing: border-box;" />
+      </div>
+
+      <div class="form-group" style="margin-bottom: 1.5rem; text-align: left;">
+        <label for="portalPassword" style="display:block; margin-bottom:0.4rem; font-size:0.88rem; font-weight:600; color:var(--text-dark);">Şifrə</label>
+        <input type="password" id="portalPassword" placeholder="••••••••" required style="width:100%; padding:0.85rem 1rem; border:1px solid var(--border-warm); border-radius:12px; font-size:0.95rem; box-sizing: border-box;" />
+      </div>
+
+      <button type="submit" id="portalSubmitBtn" class="btn-primary-burgundy" style="width: 100%; justify-content: center; padding: 0.85rem; font-size: 0.95rem; border-radius:12px; box-sizing: border-box;">
+        Daxil Ol <i class="fa-solid fa-arrow-right-to-bracket"></i>
+      </button>
+    </form>
+
+    <div id="portalErrorMsg" style="color: #c5221f; font-size: 0.88rem; margin-top: 1rem; font-weight: 600; min-height: 20px;"></div>
+
+    <div style="margin-top: 1.8rem; border-top: 1px solid var(--border-warm); padding-top: 1.2rem; display: flex; justify-content: space-between; align-items: center;">
+      <a href="index.html" style="color: var(--text-muted); font-size: 0.88rem; text-decoration: none; font-weight: 500;">
+        <i class="fa-solid fa-arrow-left"></i> Əsas Sayt
+      </a>
+      <a href="admin.html" style="color: var(--primary-burgundy); font-size: 0.88rem; text-decoration: none; font-weight: 600;">
+        Admin Paneli <i class="fa-solid fa-arrow-right"></i>
+      </a>
+    </div>
+  </div>
+
+  <script>
+    const ADMIN_EMAILS = [
+      'admin@bakery.com',
+      'admin@sweetbakery.az',
+      'elnuraliyew@gmail.com'
+    ];
+
+    function isAdmin(email) {
+      if (!email) return false;
+      return ADMIN_EMAILS.some(e => e.toLowerCase() === email.toLowerCase());
+    }
+
+    // Əgər artıq daxil olubsa uyğun ünvana yönləndir
+    auth.onAuthStateChanged(user => {
+      if (user) {
+        if (isAdmin(user.email)) {
+          window.location.replace('admin.html');
+        } else {
+          window.location.replace('index.html');
+        }
+      }
+    });
+
+    // Brute-force qorunması (5 uğursuz cəhddən sonra 10 dəqiqə kilidləmə)
+    const MAX_ATTEMPTS = 5;
+    const LOCKOUT_MS = 10 * 60 * 1000;
+
+    function checkLockout() {
+      const until = parseInt(localStorage.getItem('sb_portal_lockout') || '0', 10);
+      const now = Date.now();
+      if (until > now) {
+        return Math.ceil((until - now) / 60000);
+      }
+      return 0;
+    }
+
+    const form = document.getElementById('portalLoginForm');
+    const errDiv = document.getElementById('portalErrorMsg');
+    const btn = document.getElementById('portalSubmitBtn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const lockMins = checkLockout();
+      if (lockMins > 0) {
+        errDiv.textContent = `Təhlükəsizlik kilidi aktivdir. ${lockMins} dəqiqə sonra yenidən cəhd edin.`;
+        return;
+      }
+
+      const email = document.getElementById('portalEmail').value.trim();
+      const pass = document.getElementById('portalPassword').value;
+
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Yoxlanılır...';
+      errDiv.textContent = '';
+
+      try {
+        const cred = await auth.signInWithEmailAndPassword(email, pass);
+        localStorage.removeItem('sb_portal_attempts');
+        localStorage.removeItem('sb_portal_lockout');
+
+        if (isAdmin(cred.user.email)) {
+          window.location.replace('admin.html');
+        } else {
+          window.location.replace('index.html');
+        }
+      } catch (err) {
+        let attempts = parseInt(localStorage.getItem('sb_portal_attempts') || '0', 10) + 1;
+        localStorage.setItem('sb_portal_attempts', attempts);
+
+        if (attempts >= MAX_ATTEMPTS) {
+          localStorage.setItem('sb_portal_lockout', Date.now() + LOCKOUT_MS);
+          errDiv.textContent = 'Çox sayda uğursuz cəhd! Giriş 10 dəqiqəlik bloklandı.';
+        } else {
+          errDiv.textContent = `E-poçt və ya şifrə yanlışdır. Qalan cəhd: ${MAX_ATTEMPTS - attempts}`;
+        }
+        btn.disabled = false;
+        btn.innerHTML = 'Daxil Ol <i class="fa-solid fa-arrow-right-to-bracket"></i>';
+      }
+    });
+  </script>
 </body>
 </html>

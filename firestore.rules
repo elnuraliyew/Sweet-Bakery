@@ -2,43 +2,285 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Tortlar (Məhsullar) - Hər kəs baxa bilər, daxil olmuş istifadəçi və admin dəyişə bilər
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: products
+    // Document ID: {productId}
+    // Fields:
+    //   - name: string (required, 1-150 chars) - Cake name
+    //   - code: string (required, 1-30 chars) - Product SKU/code (e.g., SB-101)
+    //   - price: number (required, > 0 and <= 100000) - Price per kg
+    //   - categoryId: string (required, 1-100 chars) - ID of the category
+    //   - imageUrl: string (required, 1-850000 chars, url or base64 data) - Image URL or data URI
+    //   - description: string (optional, 0-2000 chars) - Cake details and ingredients
+    //   - priceUnit: string (optional, 1-20 chars) - Measurement unit (e.g., 'kq')
+    //   - createdAt: timestamp (optional, immutable) - Creation timestamp
+    //   - updatedAt: timestamp (optional) - Update timestamp
+    //
+    // Collection: categories
+    // Document ID: {categoryId}
+    // Fields:
+    //   - name: string (required, 1-100 chars) - Category display name
+    //   - createdAt: timestamp (optional, immutable) - Creation timestamp
+    //
+    // Collection: flavors
+    // Document ID: {flavorId}
+    // Fields:
+    //   - name: string (required, 1-100 chars) - Flavor / cream name
+    //   - createdAt: timestamp (optional, immutable) - Creation timestamp
+    //
+    // Collection: custom_orders
+    // Document ID: {orderId}
+    // Fields:
+    //   - clientName: string (required, 1-100 chars) - Customer full name
+    //   - phone: string (required, 1-35 chars) - Customer phone / WhatsApp number
+    //   - deliveryDate: string (required, 1-60 chars) - Desired delivery date/time
+    //   - size: string (required, 1-30 chars) - Cake size / weight (e.g., '2.5 kq')
+    //   - flavor: string (required, 1-100 chars) - Selected flavor / cream
+    //   - status: string (required, 'Gözləmədə' on create, up to 50 chars on update) - Order status
+    //   - createdAt: timestamp (required, immutable) - Submission timestamp
+    //   - designDescription: string (optional, 0-1000 chars) - Custom design description
+    //   - additionalNotes: string (optional, 0-1000 chars) - Extra notes or wishes
+    //   - updatedAt: timestamp (optional) - Admin update timestamp
+    //
+    // Collection: users
+    // Document ID: {userId} (matches Firebase Auth UID)
+    // Fields:
+    //   - uid: string (required, matches userId, immutable) - User UID
+    //   - name: string (required, 1-100 chars) - User display name
+    //   - email: string (required, 3-100 chars, valid email format) - User email
+    //   - role: string (required, 'client' on create by non-admin; 'client' or 'admin') - User role
+    //   - createdAt: timestamp (optional, immutable) - Registration timestamp
+    //   - updatedAt: timestamp (optional) - Profile update timestamp
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    // Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if the authenticated user is an authorized admin
+    function isAdmin() {
+      return isAuthenticated() &&
+        request.auth.token.email != null &&
+        (
+          request.auth.token.email in [
+            'admin@bakery.com',
+            'admin@sweetbakery.az',
+            'elnuraliyew@gmail.com'
+          ] ||
+          (request.auth.token.keys().hasAll(['admin']) && request.auth.token.admin == true)
+        );
+    }
+
+    // Check if user is the owner of the user document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Validate that all required fields are present in incoming data
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    // Validate that no undeclared/unexpected fields are present in incoming data
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // Validate email format
+    function isValidEmail(email) {
+      return email is string &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidProduct(data) {
+      return hasOnlyAllowedFields([
+          'name', 'code', 'price', 'categoryId', 'imageUrl',
+          'description', 'priceUnit', 'createdAt', 'updatedAt'
+        ]) &&
+        hasRequiredFields(['name', 'code', 'price', 'categoryId', 'imageUrl']) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 150 &&
+        data.code is string && data.code.size() >= 1 && data.code.size() <= 30 &&
+        data.price is number && data.price > 0 && data.price <= 100000 &&
+        data.categoryId is string && data.categoryId.size() >= 1 && data.categoryId.size() <= 100 &&
+        data.imageUrl is string && data.imageUrl.size() >= 1 && data.imageUrl.size() <= 850000 &&
+        (data.imageUrl.matches('^https?://.*') || data.imageUrl.matches('^data:image/.*') || data.imageUrl.matches('^gs://.*')) &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 2000)) &&
+        (!('priceUnit' in data) || (data.priceUnit is string && data.priceUnit.size() <= 20)) &&
+        (!('createdAt' in data) || data.createdAt is timestamp) &&
+        (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function isValidCategory(data) {
+      return hasOnlyAllowedFields(['name', 'createdAt']) &&
+        hasRequiredFields(['name']) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+        (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    function isValidFlavor(data) {
+      return hasOnlyAllowedFields(['name', 'createdAt']) &&
+        hasRequiredFields(['name']) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+        (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    function isValidCustomOrderCreate(data) {
+      return hasOnlyAllowedFields([
+          'clientName', 'phone', 'deliveryDate', 'size', 'flavor',
+          'status', 'createdAt', 'designDescription', 'additionalNotes'
+        ]) &&
+        hasRequiredFields([
+          'clientName', 'phone', 'deliveryDate', 'size', 'flavor',
+          'status', 'createdAt'
+        ]) &&
+        data.clientName is string && data.clientName.size() >= 1 && data.clientName.size() <= 100 &&
+        data.phone is string && data.phone.size() >= 1 && data.phone.size() <= 35 &&
+        data.deliveryDate is string && data.deliveryDate.size() >= 1 && data.deliveryDate.size() <= 60 &&
+        data.size is string && data.size.size() >= 1 && data.size.size() <= 30 &&
+        data.flavor is string && data.flavor.size() >= 1 && data.flavor.size() <= 100 &&
+        data.status == 'Gözləmədə' &&
+        data.createdAt is timestamp &&
+        (!('designDescription' in data) || (data.designDescription is string && data.designDescription.size() <= 1000)) &&
+        (!('additionalNotes' in data) || (data.additionalNotes is string && data.additionalNotes.size() <= 1000));
+    }
+
+    function isValidCustomOrderUpdate(data) {
+      return hasOnlyAllowedFields([
+          'clientName', 'phone', 'deliveryDate', 'size', 'flavor',
+          'status', 'createdAt', 'designDescription', 'additionalNotes', 'updatedAt'
+        ]) &&
+        hasRequiredFields([
+          'clientName', 'phone', 'deliveryDate', 'size', 'flavor',
+          'status', 'createdAt'
+        ]) &&
+        data.clientName is string && data.clientName.size() >= 1 && data.clientName.size() <= 100 &&
+        data.phone is string && data.phone.size() >= 1 && data.phone.size() <= 35 &&
+        data.deliveryDate is string && data.deliveryDate.size() >= 1 && data.deliveryDate.size() <= 60 &&
+        data.size is string && data.size.size() >= 1 && data.size.size() <= 30 &&
+        data.flavor is string && data.flavor.size() >= 1 && data.flavor.size() <= 100 &&
+        data.status is string && data.status.size() >= 1 && data.status.size() <= 50 &&
+        data.createdAt is timestamp &&
+        data.createdAt == resource.data.createdAt &&
+        (!('designDescription' in data) || (data.designDescription is string && data.designDescription.size() <= 1000)) &&
+        (!('additionalNotes' in data) || (data.additionalNotes is string && data.additionalNotes.size() <= 1000)) &&
+        (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'name', 'email', 'role', 'createdAt', 'updatedAt']) &&
+        hasRequiredFields(['uid', 'name', 'email', 'role']) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 100 && isValidEmail(data.email) &&
+        data.role is string && (data.role == 'client' || data.role == 'admin') &&
+        (!('createdAt' in data) || data.createdAt is timestamp) &&
+        (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    // ===============================================================
+    // Collection Rules
+    // ===============================================================
+
+    // -----------------------------------------------------------
+    // 1. Products (Tortlar / Məhsullar)
+    // -----------------------------------------------------------
     match /products/{productId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create: if isAdmin() && isValidProduct(request.resource.data);
+      allow update: if isAdmin() &&
+        isValidProduct(request.resource.data) &&
+        (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+      allow delete: if isAdmin();
     }
 
-    // Kateqoriyalar - Hər kəs baxa bilər, daxil olmuş istifadəçi və admin dəyişə bilər
+    // -----------------------------------------------------------
+    // 2. Categories (Kateqoriyalar)
+    // -----------------------------------------------------------
     match /categories/{categoryId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create: if isAdmin() && isValidCategory(request.resource.data);
+      allow update: if isAdmin() &&
+        isValidCategory(request.resource.data) &&
+        (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+      allow delete: if isAdmin();
     }
 
-    // Dadlar (Flavors / Krem Seçimləri) - Hər kəs baxa bilər, daxil olmuş istifadəçi və admin dəyişə bilər
+    // -----------------------------------------------------------
+    // 3. Flavors (Dadlar / Krem Seçimləri)
+    // -----------------------------------------------------------
     match /flavors/{flavorId} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create: if isAdmin() && isValidFlavor(request.resource.data);
+      allow update: if isAdmin() &&
+        isValidFlavor(request.resource.data) &&
+        (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+      allow delete: if isAdmin();
     }
 
-    // Fərdi Sifarişlər - Müştərilər formanı doldurub göndərə bilər, adminlər oxuyub idarə edə bilər
+    // -----------------------------------------------------------
+    // 4. Custom Orders (Fərdi Sifarişlər)
+    // -----------------------------------------------------------
     match /custom_orders/{orderId} {
-      allow create: if true;
-      allow read, update, delete: if request.auth != null;
+      // Unauthenticated or authenticated customers can submit orders with strict schema validation
+      allow create: if isValidCustomOrderCreate(request.resource.data);
+
+      // Only authorized admins can view, update status, or delete custom orders
+      allow read, delete: if isAdmin();
+      allow update: if isAdmin() && isValidCustomOrderUpdate(request.resource.data);
     }
 
-    // Müştəri profilləri
+    // -----------------------------------------------------------
+    // 5. Users (Müştəri və İstifadəçi Profilləri)
+    // -----------------------------------------------------------
     match /users/{userId} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      // Owner or Admin can read profile data
+      allow read: if isOwner(userId) || isAdmin();
+
+      // Only the authenticated user can register their own document, restricted to 'client' role
+      allow create: if isAuthenticated() &&
+        isValidUser(request.resource.data) &&
+        (
+          (isOwner(userId) && request.resource.data.uid == userId && request.resource.data.role == 'client') ||
+          isAdmin()
+        );
+
+      // Users can update their profile without changing role or uid; Admins can manage users
+      allow update: if isAuthenticated() &&
+        isValidUser(request.resource.data) &&
+        (
+          (
+            isOwner(userId) &&
+            request.resource.data.uid == resource.data.uid &&
+            request.resource.data.role == resource.data.role &&
+            (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt)
+          ) ||
+          isAdmin()
+        );
+
+      // Only administrators can delete user accounts
+      allow delete: if isAdmin();
     }
 
-    // Bütün digər kolleksiyalar üçün qoruyucu və ehtiyat icazə qaydası
+    // -----------------------------------------------------------
+    // 6. Default Deny for all other collections / documents
+    // -----------------------------------------------------------
     match /{document=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
+      allow read, write: false;
     }
 
   }
 }
-

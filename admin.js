@@ -30,6 +30,50 @@ function isAdminUser(user) {
   return ADMIN_EMAILS.some(e => e.toLowerCase() === user.email.toLowerCase());
 }
 
+// XSS (Cross-Site Scripting) Təhlükəsizlik Filtrləməsi
+function escapeHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Brute-force və Giriş Kilidi (5 yanlış cəhddən sonra 10 dəqiqə kilid)
+const MAX_ADMIN_ATTEMPTS = 5;
+const ADMIN_LOCKOUT_MS = 10 * 60 * 1000;
+
+function checkAdminLockout() {
+  const until = parseInt(localStorage.getItem('sb_admin_lockout_until') || '0', 10);
+  const now = Date.now();
+  if (until > now) {
+    return Math.ceil((until - now) / 60000);
+  }
+  if (until && until <= now) {
+    localStorage.removeItem('sb_admin_lockout_until');
+    localStorage.removeItem('sb_admin_failed_attempts');
+  }
+  return 0;
+}
+
+function recordAdminFailedAttempt() {
+  const attempts = parseInt(localStorage.getItem('sb_admin_failed_attempts') || '0', 10) + 1;
+  localStorage.setItem('sb_admin_failed_attempts', attempts);
+  if (attempts >= MAX_ADMIN_ATTEMPTS) {
+    const lockoutUntil = Date.now() + ADMIN_LOCKOUT_MS;
+    localStorage.setItem('sb_admin_lockout_until', lockoutUntil);
+    return { locked: true, remainingMins: 10 };
+  }
+  return { locked: false, remaining: MAX_ADMIN_ATTEMPTS - attempts };
+}
+
+function clearAdminFailedAttempts() {
+  localStorage.removeItem('sb_admin_failed_attempts');
+  localStorage.removeItem('sb_admin_lockout_until');
+}
+
 // Bildiriş (Toast) Mesajı Funksiyası
 function notify(text, isError = false) {
   const toast = document.createElement('div');
@@ -57,7 +101,7 @@ function notify(text, isError = false) {
   setTimeout(() => toast.remove(), 3500);
 }
 
-// 1. Auth Status Yoxlanışı
+// 1. Auth Status Yoxlanışı və Yetkisiz Girişə Qarşı Mühafizə
 auth.onAuthStateChanged(user => {
   const loginModal = document.getElementById('loginModal');
   const adminDashboard = document.getElementById('adminDashboard');
@@ -65,8 +109,13 @@ auth.onAuthStateChanged(user => {
 
   if (user) {
     if (!isAdminUser(user)) {
-      alert('Bu səhifə yalnız Sweet Bakery adminləri üçündür!');
-      window.location.href = 'index.html';
+      auth.signOut();
+      if (adminDashboard) {
+        adminDashboard.style.display = 'none';
+        adminDashboard.innerHTML = ''; // DOM-u dərhal boşaldırıq ki, kod və elementlər kənardan görünməsin
+      }
+      alert('Təhlükəsizlik Bildirişi: Bu profilin Sweet Bakery idarəetmə panelinə daxil olmaq səlahiyyəti yoxdur.');
+      window.location.replace('index.html');
       return;
     }
 
@@ -80,22 +129,54 @@ auth.onAuthStateChanged(user => {
   }
 });
 
-// 2. Giriş Formu
+// 2. Giriş Formu (Brute-force və Şifrə Hücumlarına qarşı kilidləmə)
 const loginForm = document.getElementById('adminLoginForm');
 if (loginForm) {
   loginForm.addEventListener('submit', async e => {
     e.preventDefault();
+    const lockMins = checkAdminLockout();
+    const errDiv = document.getElementById('loginError');
+    if (lockMins > 0) {
+      if (errDiv) errDiv.textContent = `Təhlükəsizlik kilidi aktivdir: Çox sayda yanlış cəhd! Zəhmət olmasa ${lockMins} dəqiqə sonra yenidən cəhd edin.`;
+      return;
+    }
+
     const email = document.getElementById('adminEmail').value.trim();
     const pass = document.getElementById('adminPassword').value;
-    const errDiv = document.getElementById('loginError');
+    const submitBtn = loginForm.querySelector('button[type="submit"]');
+
+    if (!ADMIN_EMAILS.some(e => e.toLowerCase() === email.toLowerCase())) {
+      const status = recordAdminFailedAttempt();
+      if (status.locked) {
+        if (errDiv) errDiv.textContent = 'Giriş 10 dəqiqəlik bloklandı: Həddindən artıq yanlış cəhd!';
+      } else {
+        if (errDiv) errDiv.textContent = `Bu e-poçt ünvanı admin hüququna malik deyil. Qalan cəhdlər: ${status.remaining}`;
+      }
+      return;
+    }
 
     try {
-      errDiv.textContent = '';
+      if (errDiv) errDiv.textContent = '';
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Yoxlanılır...';
+      }
       await auth.signInWithEmailAndPassword(email, pass);
+      clearAdminFailedAttempts();
       notify('Uğurla daxil oldunuz!');
     } catch (err) {
       console.error(err);
-      errDiv.textContent = 'Giriş uğursuz oldu: E-poçt və ya şifrə yanlışdır.';
+      const status = recordAdminFailedAttempt();
+      if (status.locked) {
+        if (errDiv) errDiv.textContent = 'Təhlükəsizlik kilidi aktiv edildi! 5 yanlış cəhd səbəbilə giriş 10 dəqiqəlik bloklandı.';
+      } else {
+        if (errDiv) errDiv.textContent = `Giriş uğursuz oldu: Şifrə yanlışdır. Qalan cəhdlər: ${status.remaining}`;
+      }
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = 'Daxil Ol <i class="fa-solid fa-arrow-right-to-bracket"></i>';
+      }
     }
   });
 }
@@ -420,12 +501,12 @@ async function fetchCategories() {
     adminCategories.forEach(cat => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td style="font-weight: 700; color: var(--text-dark);">${cat.name}</td>
+        <td style="font-weight: 700; color: var(--text-dark);">${escapeHtml(cat.name)}</td>
         <td style="text-align: right; white-space: nowrap;">
-          <button class="action-btn-pill action-edit" onclick="editCategory('${cat.id}', '${cat.name.replace(/'/g, "\\'")}')">
+          <button class="action-btn-pill action-edit" onclick="editCategory('${escapeHtml(cat.id)}')">
             <i class="fa-solid fa-pen-to-square"></i> Redaktə
           </button>
-          <button class="action-btn-pill action-delete" onclick="deleteCategory('${cat.id}')">
+          <button class="action-btn-pill action-delete" onclick="deleteCategory('${escapeHtml(cat.id)}')">
             <i class="fa-solid fa-trash"></i> Sil
           </button>
         </td>
@@ -459,9 +540,11 @@ async function handleCategorySubmit(e) {
 }
 
 // 7. Kateqoriyanı Redaktə Et
-window.editCategory = async function(id, currentName) {
-  const newName = prompt('Kateqoriyanın yeni adını daxil edin:', currentName);
-  if (!newName || newName.trim() === '' || newName.trim() === currentName) return;
+window.editCategory = async function(id) {
+  const cat = adminCategories.find(c => c.id === id);
+  if (!cat) return;
+  const newName = prompt('Kateqoriyanın yeni adını daxil edin:', cat.name);
+  if (!newName || newName.trim() === '' || newName.trim() === cat.name) return;
 
   try {
     await db.collection('categories').doc(id).update({ name: newName.trim() });
@@ -560,18 +643,18 @@ async function fetchProducts() {
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>
-          <img src="${prod.imageUrl}" class="table-cake-img" alt="${prod.name}" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=120&q=80'" />
+          <img src="${escapeHtml(prod.imageUrl)}" class="table-cake-img" alt="${escapeHtml(prod.name)}" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=120&q=80'" />
         </td>
-        <td><span class="table-code-badge">${prodCode}</span></td>
-        <td style="font-weight: 700; color: var(--text-dark);">${prod.name}</td>
-        <td><span class="category-badge-pill">${catName}</span></td>
-        <td><span class="price-badge-bold">${prod.price} <span>AZN / kq</span></span></td>
-        <td style="max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); font-size: 0.85rem;" title="${prod.description}">${prod.description}</td>
+        <td><span class="table-code-badge">${escapeHtml(prodCode)}</span></td>
+        <td style="font-weight: 700; color: var(--text-dark);">${escapeHtml(prod.name)}</td>
+        <td><span class="category-badge-pill">${escapeHtml(catName)}</span></td>
+        <td><span class="price-badge-bold">${Number(prod.price) || 0} <span>AZN / kq</span></span></td>
+        <td style="max-width: 260px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-muted); font-size: 0.85rem;" title="${escapeHtml(prod.description)}">${escapeHtml(prod.description)}</td>
         <td style="text-align: right; white-space: nowrap;">
-          <button class="action-btn-pill action-edit" onclick="startEditProduct('${prod.id}')">
+          <button class="action-btn-pill action-edit" onclick="startEditProduct('${escapeHtml(prod.id)}')">
             <i class="fa-solid fa-pen-to-square"></i> Redaktə
           </button>
-          <button class="action-btn-pill action-delete" onclick="deleteProduct('${prod.id}')">
+          <button class="action-btn-pill action-delete" onclick="deleteProduct('${escapeHtml(prod.id)}')">
             <i class="fa-solid fa-trash"></i> Sil
           </button>
         </td>
@@ -780,12 +863,12 @@ async function fetchFlavors() {
     adminFlavors.forEach(flavor => {
       const tr = document.createElement('tr');
       tr.innerHTML = `
-        <td style="font-weight: 700; color: var(--text-dark);">${flavor.name}</td>
+        <td style="font-weight: 700; color: var(--text-dark);">${escapeHtml(flavor.name)}</td>
         <td style="text-align: right; white-space: nowrap;">
-          <button class="action-btn-pill action-edit" onclick="editFlavor('${flavor.id}', '${flavor.name.replace(/'/g, "\\'")}')">
+          <button class="action-btn-pill action-edit" onclick="editFlavor('${escapeHtml(flavor.id)}')">
             <i class="fa-solid fa-pen-to-square"></i> Redaktə
           </button>
-          <button class="action-btn-pill action-delete" onclick="deleteFlavor('${flavor.id}')">
+          <button class="action-btn-pill action-delete" onclick="deleteFlavor('${escapeHtml(flavor.id)}')">
             <i class="fa-solid fa-trash"></i> Sil
           </button>
         </td>
@@ -822,9 +905,11 @@ async function handleFlavorSubmit(e) {
 }
 
 // 19. Dadı Redaktə Et
-window.editFlavor = async function(id, currentName) {
-  const newName = prompt('Dadın yeni adını daxil edin:', currentName);
-  if (!newName || newName.trim() === '' || newName.trim() === currentName) return;
+window.editFlavor = async function(id) {
+  const flavor = adminFlavors.find(f => f.id === id);
+  if (!flavor) return;
+  const newName = prompt('Dadın yeni adını daxil edin:', flavor.name);
+  if (!newName || newName.trim() === '' || newName.trim() === flavor.name) return;
 
   try {
     await db.collection('flavors').doc(id).update({ name: newName.trim() });
@@ -881,7 +966,190 @@ window.seedDefaultFlavors = async function() {
 
 // 22. Firestore Qaydalarını Kopyalama Köməkçisi
 window.copyFirestoreRulesPrompt = function() {
-  const rulesCode = `rules_version = '2';\nservice cloud.firestore {\n  match /databases/{database}/documents {\n    match /{document=**} {\n      allow read: if true;\n      allow write: if request.auth != null;\n    }\n  }\n}`;
+  const rulesCode = `rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        request.auth.token.email != null &&
+        (
+          request.auth.token.email in [
+            'admin@bakery.com',
+            'admin@sweetbakery.az',
+            'elnuraliyew@gmail.com'
+          ] ||
+          (request.auth.token.keys().hasAll(['admin']) && request.auth.token.admin == true)
+        );
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasRequiredFields(fields) {
+      return request.resource.data.keys().hasAll(fields);
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    function isValidEmail(email) {
+      return email is string &&
+        email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidProduct(data) {
+      return hasOnlyAllowedFields([
+          'name', 'code', 'price', 'categoryId', 'imageUrl',
+          'description', 'priceUnit', 'createdAt', 'updatedAt'
+        ]) &&
+        hasRequiredFields(['name', 'code', 'price', 'categoryId', 'imageUrl']) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 150 &&
+        data.code is string && data.code.size() >= 1 && data.code.size() <= 30 &&
+        data.price is number && data.price > 0 && data.price <= 100000 &&
+        data.categoryId is string && data.categoryId.size() >= 1 && data.categoryId.size() <= 100 &&
+        data.imageUrl is string && data.imageUrl.size() >= 1 && data.imageUrl.size() <= 850000 &&
+        (data.imageUrl.matches('^https?://.*') || data.imageUrl.matches('^data:image/.*') || data.imageUrl.matches('^gs://.*')) &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 2000)) &&
+        (!('priceUnit' in data) || (data.priceUnit is string && data.priceUnit.size() <= 20)) &&
+        (!('createdAt' in data) || data.createdAt is timestamp) &&
+        (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function isValidCategory(data) {
+      return hasOnlyAllowedFields(['name', 'createdAt']) &&
+        hasRequiredFields(['name']) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+        (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    function isValidFlavor(data) {
+      return hasOnlyAllowedFields(['name', 'createdAt']) &&
+        hasRequiredFields(['name']) &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+        (!('createdAt' in data) || data.createdAt is timestamp);
+    }
+
+    function isValidCustomOrderCreate(data) {
+      return hasOnlyAllowedFields([
+          'clientName', 'phone', 'deliveryDate', 'size', 'flavor',
+          'status', 'createdAt', 'designDescription', 'additionalNotes'
+        ]) &&
+        hasRequiredFields([
+          'clientName', 'phone', 'deliveryDate', 'size', 'flavor',
+          'status', 'createdAt'
+        ]) &&
+        data.clientName is string && data.clientName.size() >= 1 && data.clientName.size() <= 100 &&
+        data.phone is string && data.phone.size() >= 1 && data.phone.size() <= 35 &&
+        data.deliveryDate is string && data.deliveryDate.size() >= 1 && data.deliveryDate.size() <= 60 &&
+        data.size is string && data.size.size() >= 1 && data.size.size() <= 30 &&
+        data.flavor is string && data.flavor.size() >= 1 && data.flavor.size() <= 100 &&
+        data.status == 'Gözləmədə' &&
+        data.createdAt is timestamp &&
+        (!('designDescription' in data) || (data.designDescription is string && data.designDescription.size() <= 1000)) &&
+        (!('additionalNotes' in data) || (data.additionalNotes is string && data.additionalNotes.size() <= 1000));
+    }
+
+    function isValidCustomOrderUpdate(data) {
+      return hasOnlyAllowedFields([
+          'clientName', 'phone', 'deliveryDate', 'size', 'flavor',
+          'status', 'createdAt', 'designDescription', 'additionalNotes', 'updatedAt'
+        ]) &&
+        hasRequiredFields([
+          'clientName', 'phone', 'deliveryDate', 'size', 'flavor',
+          'status', 'createdAt'
+        ]) &&
+        data.clientName is string && data.clientName.size() >= 1 && data.clientName.size() <= 100 &&
+        data.phone is string && data.phone.size() >= 1 && data.phone.size() <= 35 &&
+        data.deliveryDate is string && data.deliveryDate.size() >= 1 && data.deliveryDate.size() <= 60 &&
+        data.size is string && data.size.size() >= 1 && data.size.size() <= 30 &&
+        data.flavor is string && data.flavor.size() >= 1 && data.flavor.size() <= 100 &&
+        data.status is string && data.status.size() >= 1 && data.status.size() <= 50 &&
+        data.createdAt is timestamp &&
+        data.createdAt == resource.data.createdAt &&
+        (!('designDescription' in data) || (data.designDescription is string && data.designDescription.size() <= 1000)) &&
+        (!('additionalNotes' in data) || (data.additionalNotes is string && data.additionalNotes.size() <= 1000)) &&
+        (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'name', 'email', 'role', 'createdAt', 'updatedAt']) &&
+        hasRequiredFields(['uid', 'name', 'email', 'role']) &&
+        data.uid is string && data.uid.size() >= 1 && data.uid.size() <= 128 &&
+        data.name is string && data.name.size() >= 1 && data.name.size() <= 100 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 100 && isValidEmail(data.email) &&
+        data.role is string && (data.role == 'client' || data.role == 'admin') &&
+        (!('createdAt' in data) || data.createdAt is timestamp) &&
+        (!('updatedAt' in data) || data.updatedAt is timestamp);
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidProduct(request.resource.data);
+      allow update: if isAdmin() &&
+        isValidProduct(request.resource.data) &&
+        (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+      allow delete: if isAdmin();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidCategory(request.resource.data);
+      allow update: if isAdmin() &&
+        isValidCategory(request.resource.data) &&
+        (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+      allow delete: if isAdmin();
+    }
+
+    match /flavors/{flavorId} {
+      allow read: if true;
+      allow create: if isAdmin() && isValidFlavor(request.resource.data);
+      allow update: if isAdmin() &&
+        isValidFlavor(request.resource.data) &&
+        (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt);
+      allow delete: if isAdmin();
+    }
+
+    match /custom_orders/{orderId} {
+      allow create: if isValidCustomOrderCreate(request.resource.data);
+      allow read, delete: if isAdmin();
+      allow update: if isAdmin() && isValidCustomOrderUpdate(request.resource.data);
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() &&
+        isValidUser(request.resource.data) &&
+        (
+          (isOwner(userId) && request.resource.data.uid == userId && request.resource.data.role == 'client') ||
+          isAdmin()
+        );
+      allow update: if isAuthenticated() &&
+        isValidUser(request.resource.data) &&
+        (
+          (
+            isOwner(userId) &&
+            request.resource.data.uid == resource.data.uid &&
+            request.resource.data.role == resource.data.role &&
+            (!('createdAt' in resource.data) || request.resource.data.createdAt == resource.data.createdAt)
+          ) ||
+          isAdmin()
+        );
+      allow delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: false;
+    }
+  }
+}`;
   navigator.clipboard.writeText(rulesCode).then(() => {
     alert('Firestore Qaydaları kopyalandı!\\n\\nFirebase Console -> Firestore Database -> Rules bölməsinə keçib yapışdırın və "Publish" vurun.');
   }).catch(() => {
