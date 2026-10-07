@@ -14,9 +14,20 @@ const DEFAULT_CATEGORIES = [
   'Fərdi dizaynlı tortlar'
 ];
 
+// Standart dad seçimləri (Admin paneli ilə idarə olunur)
+const DEFAULT_FLAVORS = [
+  'Klassik Şokoladlı & Qanaş',
+  'Qırmızı Məxmər (Red Velvet)',
+  'Təbii Giləmeyvəli & Vanilli',
+  'Antep Püstəli & Moruqlu',
+  'Karamel & Fındıqlı Krukan',
+  'Fərdi resept (izahda qeyd edəcəm)'
+];
+
 let currentCategory = 'all';
 let productsList = [];
 let categoriesList = [];
+let flavorsList = [];
 
 // Səbət və Sevimlilər vəziyyəti (LocalStorage ilə saxlanılır)
 let cart = JSON.parse(localStorage.getItem('sweet_bakery_cart') || '[]');
@@ -111,6 +122,7 @@ function initHeaderAndMobileNav() {
 async function initApp() {
   await loadCategories();
   await loadProducts();
+  await loadFlavors();
 }
 
 async function loadCategories() {
@@ -187,6 +199,41 @@ window.selectCategoryByName = function(catName) {
     catEl.scrollIntoView({ behavior: 'smooth' });
   }
 };
+
+async function loadFlavors() {
+  const select = document.getElementById('customFlavor');
+  if (!select) return;
+
+  try {
+    const snapshot = await db.collection('flavors').get();
+    if (snapshot.empty) {
+      // Əgər bazada dad yoxdursa, standart dadları bazaya qeyd edirik
+      const batch = db.batch();
+      const createdFlavors = [];
+      for (const fName of DEFAULT_FLAVORS) {
+        const docRef = db.collection('flavors').doc();
+        batch.set(docRef, { name: fName, createdAt: new Date() });
+        createdFlavors.push({ id: docRef.id, name: fName });
+      }
+      await batch.commit();
+      flavorsList = createdFlavors;
+    } else {
+      flavorsList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    }
+  } catch (err) {
+    console.warn('Dadların yüklənməsi xətası (yerli standart dadlardan istifadə edilir):', err);
+    flavorsList = DEFAULT_FLAVORS.map((name, i) => ({ id: `flv-${i}`, name }));
+  }
+
+  // Dad seçim xanasını (select) dinamik doldururuq
+  select.innerHTML = '<option value="">Dad və krem seçin...</option>';
+  flavorsList.forEach(f => {
+    const opt = document.createElement('option');
+    opt.value = f.name;
+    opt.textContent = f.name;
+    select.appendChild(opt);
+  });
+}
 
 async function loadProducts() {
   const grid = document.getElementById('productContainer');
@@ -683,8 +730,13 @@ function initCustomOrderForm() {
 
       const numSize = parseFloat(rawSize);
 
-      if (!name || !phone || !date || !rawSize || isNaN(numSize) || numSize <= 0 || !flavor) {
+      if (!name || !phone || !date || !rawSize || isNaN(numSize) || !flavor) {
         showToast('Zəhmət olmasa ulduzlu (*) bütün vacib sahələri düzgün doldurun.', true);
+        return;
+      }
+
+      if (numSize < 1) {
+        showToast('Tortun çəkisi minimum 1 kq olmalıdır.', true);
         return;
       }
 

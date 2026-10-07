@@ -65,6 +65,9 @@
         <button class="admin-nav-item" onclick="switchTab('categoriesTab')">
           <i class="fa-solid fa-layer-group"></i> Kateqoriyalar
         </button>
+        <button class="admin-nav-item" onclick="switchTab('flavorsTab')">
+          <i class="fa-solid fa-ice-cream"></i> Dadlar (Krem & Dad)
+        </button>
         <a href="index.html" class="admin-nav-item" target="_blank">
           <i class="fa-solid fa-arrow-up-right-from-square"></i> Sayta Bax (Canlı)
         </a>
@@ -96,6 +99,10 @@
         <div class="stat-box">
           <h5>Kateqoriyalar</h5>
           <div class="stat-num" id="totalCategoriesCount">0</div>
+        </div>
+        <div class="stat-box">
+          <h5>Dad Çeşidləri</h5>
+          <div class="stat-num" id="totalFlavorsCount">0</div>
         </div>
         <div class="stat-box">
           <h5>Status</h5>
@@ -211,6 +218,41 @@
               </thead>
               <tbody id="categoriesTableBody">
                 <!-- Kateqoriya sıraları -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 3: Dadlar İdarəetməsi -->
+      <div id="flavorsTab" class="tab-content" style="display: none;">
+        <div class="admin-card">
+          <h2><i class="fa-solid fa-circle-plus"></i> Yeni Dad Əlavə Et</h2>
+          <form id="flavorForm" style="display: flex; gap: 1rem; max-width: 500px;">
+            <input type="text" id="newFlavorName" placeholder="Məs: Antep Püstəli & Moruqlu" required style="flex-grow: 1; padding: 0.8rem; border-radius: 12px; border: 1.5px solid #eaeaea;" />
+            <button type="submit" class="btn-contact" style="border: none; cursor: pointer; white-space: nowrap;">
+              <i class="fa-solid fa-plus"></i> Əlavə Et
+            </button>
+          </form>
+        </div>
+
+        <div class="admin-card">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+            <h2 style="margin-bottom: 0;"><i class="fa-solid fa-ice-cream"></i> Mövcud Dadlar (Krem Seçimləri)</h2>
+            <button onclick="seedDefaultFlavors()" class="btn-outline" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+              <i class="fa-solid fa-wand-magic-sparkles"></i> Standart Dadları Bərpa Et
+            </button>
+          </div>
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Dad / Resept Adı</th>
+                  <th style="text-align: right;">Əməliyyat</th>
+                </tr>
+              </thead>
+              <tbody id="flavorsTableBody">
+                <!-- Dad sıraları -->
               </tbody>
             </table>
           </div>

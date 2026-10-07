@@ -8,6 +8,7 @@ const ADMIN_EMAILS = [
 
 let adminProducts = [];
 let adminCategories = [];
+let adminFlavors = [];
 
 function isAdminUser(user) {
   if (!user || !user.email) return false;
@@ -95,6 +96,7 @@ if (logoutBtn) {
 async function initAdminData() {
   await fetchCategories();
   await fetchProducts();
+  await fetchFlavors();
   setupEventListeners();
 }
 
@@ -121,6 +123,12 @@ function setupEventListeners() {
   const catForm = document.getElementById('categoryForm');
   if (catForm) {
     catForm.addEventListener('submit', handleCategorySubmit);
+  }
+
+  // Dad Formu Submit
+  const flvForm = document.getElementById('flavorForm');
+  if (flvForm) {
+    flvForm.addEventListener('submit', handleFlavorSubmit);
   }
 }
 
@@ -458,13 +466,130 @@ window.deleteProduct = async function(id) {
   }
 };
 
-// 13. Tab Keçidləri (Tortlar <-> Kateqoriyalar)
+// 13. Tab Keçidləri (Tortlar <-> Kateqoriyalar <-> Dadlar)
 window.switchTab = function(tabId) {
   document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
-  document.getElementById(tabId).style.display = 'block';
+  const target = document.getElementById(tabId);
+  if (target) target.style.display = 'block';
 
   document.querySelectorAll('.admin-nav-item').forEach(btn => btn.classList.remove('active'));
   if (event && event.currentTarget) {
     event.currentTarget.classList.add('active');
   }
 };
+
+// 14. Dadları Gətir & Render Et
+async function fetchFlavors() {
+  try {
+    const snap = await db.collection('flavors').get();
+    adminFlavors = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    const countEl = document.getElementById('totalFlavorsCount');
+    if (countEl) countEl.textContent = adminFlavors.length;
+
+    const tableBody = document.getElementById('flavorsTableBody');
+    if (!tableBody) return;
+    tableBody.innerHTML = '';
+
+    if (adminFlavors.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="2" style="text-align:center; color:#888; padding: 2rem;">Hələ heç bir dad əlavə edilməyib. Yuxarıdakı formadan əlavə edin və ya standart dadları bərpa edin.</td></tr>';
+      return;
+    }
+
+    adminFlavors.forEach(flavor => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight: 600; color: var(--choco-dark);">${flavor.name}</td>
+        <td style="text-align: right; white-space: nowrap;">
+          <button class="action-btn action-edit" onclick="editFlavor('${flavor.id}', '${flavor.name.replace(/'/g, "\\'")}')">
+            <i class="fa-solid fa-pen-to-square"></i> Redaktə
+          </button>
+          <button class="action-btn action-delete" onclick="deleteFlavor('${flavor.id}')">
+            <i class="fa-solid fa-trash"></i> Sil
+          </button>
+        </td>
+      `;
+      tableBody.appendChild(tr);
+    });
+  } catch (err) {
+    console.error(err);
+    notify('Dadları yükləyərkən xəta baş verdi', true);
+  }
+}
+
+// 15. Dad Əlavə Et
+async function handleFlavorSubmit(e) {
+  e.preventDefault();
+  const input = document.getElementById('newFlavorName');
+  const name = input.value.trim();
+  if (!name) return;
+
+  try {
+    await db.collection('flavors').add({ name, createdAt: new Date() });
+    notify(`"${name}" dadı əlavə edildi!`);
+    input.value = '';
+    await fetchFlavors();
+  } catch (err) {
+    console.error(err);
+    notify(err.message, true);
+  }
+}
+
+// 16. Dadı Redaktə Et
+window.editFlavor = async function(id, currentName) {
+  const newName = prompt('Dadın yeni adını daxil edin:', currentName);
+  if (!newName || newName.trim() === '' || newName.trim() === currentName) return;
+
+  try {
+    await db.collection('flavors').doc(id).update({ name: newName.trim() });
+    notify(`Dad "${newName.trim()}" olaraq yeniləndi!`);
+    await fetchFlavors();
+  } catch (err) {
+    console.error(err);
+    notify(err.message, true);
+  }
+};
+
+// 17. Dadı Sil
+window.deleteFlavor = async function(id) {
+  if (!confirm('Bu dadı silmək istəyirsiniz?')) return;
+  try {
+    await db.collection('flavors').doc(id).delete();
+    notify('Dad silindi.');
+    await fetchFlavors();
+  } catch (err) {
+    console.error(err);
+    notify(err.message, true);
+  }
+};
+
+// 18. Standart Dadları Bərpa Et
+window.seedDefaultFlavors = async function() {
+  if (!confirm('Standart dadlar bazaya əlavə edilsin?')) return;
+  const DEFAULT_FLAVORS = [
+    'Klassik Şokoladlı & Qanaş',
+    'Qırmızı Məxmər (Red Velvet)',
+    'Təbii Giləmeyvəli & Vanilli',
+    'Antep Püstəli & Moruqlu',
+    'Karamel & Fındıqlı Krukan',
+    'Fərdi resept (izahda qeyd edəcəm)'
+  ];
+
+  try {
+    const batch = db.batch();
+    for (const flvName of DEFAULT_FLAVORS) {
+      const exists = adminFlavors.some(f => f.name.toLowerCase() === flvName.toLowerCase());
+      if (!exists) {
+        const docRef = db.collection('flavors').doc();
+        batch.set(docRef, { name: flvName, createdAt: new Date() });
+      }
+    }
+    await batch.commit();
+    notify('Standart dadlar uğurla tətbiq edildi!');
+    await fetchFlavors();
+  } catch (err) {
+    console.error(err);
+    notify(err.message, true);
+  }
+};
+
