@@ -10,6 +10,21 @@ let adminProducts = [];
 let adminCategories = [];
 let adminFlavors = [];
 
+// Hər məhsul üçün stabil və unikal məhsul kodu (SKU / Məhsul Kodu)
+function getProductCode(prod) {
+  if (prod && prod.code && String(prod.code).trim()) {
+    return String(prod.code).trim().toUpperCase();
+  }
+  const key = (prod && (prod.id || prod.name)) || 'cake';
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = ((hash << 5) - hash) + key.charCodeAt(i);
+    hash |= 0;
+  }
+  const codeNum = 101 + Math.abs(hash % 890);
+  return `SB-${codeNum}`;
+}
+
 function isAdminUser(user) {
   if (!user || !user.email) return false;
   return ADMIN_EMAILS.some(e => e.toLowerCase() === user.email.toLowerCase());
@@ -415,7 +430,7 @@ async function fetchProducts() {
     if (adminProducts.length === 0) {
       tableBody.innerHTML = `
         <tr>
-          <td colspan="6">
+          <td colspan="7">
             <div class="empty-state-box">
               <i class="fa-solid fa-cake-candles"></i>
               <h4>Kataloqda hələ heç bir tort yoxdur</h4>
@@ -433,12 +448,14 @@ async function fetchProducts() {
     adminProducts.forEach(prod => {
       const cat = adminCategories.find(c => c.id === prod.categoryId);
       const catName = cat ? cat.name : 'Eksklüziv';
+      const prodCode = prod.code || getProductCode(prod);
 
       const tr = document.createElement('tr');
       tr.innerHTML = `
         <td>
           <img src="${prod.imageUrl}" class="table-cake-img" alt="${prod.name}" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=120&q=80'" />
         </td>
+        <td><span class="table-code-badge">${prodCode}</span></td>
         <td style="font-weight: 700; color: var(--text-dark);">${prod.name}</td>
         <td><span class="category-badge-pill">${catName}</span></td>
         <td><span class="price-badge-bold">${prod.price} <span>AZN / kq</span></span></td>
@@ -467,10 +484,15 @@ async function handleProductSubmit(e) {
 
   const editId = document.getElementById('editProdId').value;
   const name = document.getElementById('prodName').value.trim();
+  let code = document.getElementById('prodCode').value.trim().toUpperCase();
   const price = Number(document.getElementById('prodPrice').value);
   const categoryId = document.getElementById('prodCategory').value;
   const imageUrl = document.getElementById('prodImageUrl').value.trim();
   const description = document.getElementById('prodDesc').value.trim();
+
+  if (!code) {
+    code = `SB-${Math.floor(100 + Math.random() * 899)}`;
+  }
 
   if (!imageUrl) {
     notify('Zəhmət olmasa tortun şəklini yaddaşdan seçin!', true);
@@ -479,6 +501,7 @@ async function handleProductSubmit(e) {
 
   const productData = {
     name,
+    code,
     price,
     categoryId,
     imageUrl,
@@ -491,11 +514,11 @@ async function handleProductSubmit(e) {
     notify('Məlumatlar saxlanılır...');
     if (editId) {
       await db.collection('products').doc(editId).update(productData);
-      notify(`"${name}" uğurla yeniləndi!`);
+      notify(`"${name}" (${code}) uğurla yeniləndi!`);
     } else {
       productData.createdAt = new Date();
       await db.collection('products').add(productData);
-      notify(`"${name}" tortu kataloqa əlavə edildi!`);
+      notify(`"${name}" (${code}) tortu kataloqa əlavə edildi!`);
     }
 
     resetProductForm();
@@ -516,6 +539,7 @@ window.startEditProduct = function(id) {
 
   document.getElementById('editProdId').value = prod.id;
   document.getElementById('prodName').value = prod.name;
+  document.getElementById('prodCode').value = prod.code || getProductCode(prod);
   document.getElementById('prodPrice').value = prod.price;
   document.getElementById('prodCategory').value = prod.categoryId;
   document.getElementById('prodImageUrl').value = prod.imageUrl;
@@ -542,6 +566,7 @@ window.startEditProduct = function(id) {
 function resetProductForm() {
   document.getElementById('editProdId').value = '';
   document.getElementById('productForm').reset();
+  document.getElementById('prodCode').value = '';
   document.getElementById('prodImageUrl').value = '';
   document.getElementById('imagePreviewContainer').style.display = 'none';
   document.getElementById('productFormTitle').innerHTML = '<i class="fa-solid fa-circle-plus"></i> Yeni Tort Əlavə Et';

@@ -498,7 +498,10 @@
       </div>
 
       <div class="quickview-content">
-        <span class="quickview-badge" id="detailCat">Kateqoriya</span>
+        <div class="quickview-badges-row">
+          <span class="quickview-badge" id="detailCat">Kateqoriya</span>
+          <span class="quickview-code-badge" id="detailCode">Kod: SB-101</span>
+        </div>
         <h2 id="detailName">Tort Adı</h2>
         <div class="quickview-price" id="detailPrice">Kiloqramı: 0 AZN</div>
         <p class="quickview-desc" id="detailDesc">Tortun inqrediyentləri və təsviri...</p>
@@ -513,9 +516,12 @@
         </div>
 
         <div class="quickview-actions">
-          <button id="modalAddToCartBtn" class="btn-primary-burgundy" style="justify-content: center; width: 100%;">
+          <button id="modalAddToCartBtn" class="btn-primary-burgundy" style="justify-content: center;">
             <i class="fa-solid fa-basket-shopping"></i> Səbətə Əlavə Et
           </button>
+          <a id="modalDirectWaBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn-modal-wa" title="WhatsApp ilə birbaşa sifariş et">
+            <i class="fa-brands fa-whatsapp"></i> Sifariş Et
+          </a>
           <button id="modalFavBtn" class="icon-action-btn" title="İstək siyahısına at" aria-label="Sevimlilər">
             <i class="fa-regular fa-heart"></i>
           </button>

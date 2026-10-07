@@ -24,6 +24,22 @@ const DEFAULT_FLAVORS = [
   'Fərdi resept (izahda qeyd edəcəm)'
 ];
 
+// Hər məhsul üçün stabil və unikal məhsul kodu (SKU / Məhsul Kodu)
+function getProductCode(prod) {
+  if (prod && prod.code && String(prod.code).trim()) {
+    return String(prod.code).trim().toUpperCase();
+  }
+  // Baza və ya demo məhsulda kod qeyd edilməyibsə deterministik SB-XXX kodu
+  const key = (prod && (prod.id || prod.name)) || 'cake';
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = ((hash << 5) - hash) + key.charCodeAt(i);
+    hash |= 0;
+  }
+  const codeNum = 101 + Math.abs(hash % 890);
+  return `SB-${codeNum}`;
+}
+
 let currentCategory = 'all';
 let productsList = [];
 let categoriesList = [];
@@ -254,6 +270,7 @@ async function loadProducts() {
       productsList = [
         {
           id: 'cake-1',
+          code: 'SB-101',
           name: 'Klassik Şokoladlı Zəriflik',
           description: 'Zərif südlü şokolad, qozlu biskvit və krem qanaş.',
           price: 24,
@@ -263,6 +280,7 @@ async function loadProducts() {
         },
         {
           id: 'cake-2',
+          code: 'SB-102',
           name: 'Qırmızı Meyvəli & Moruqlu',
           description: 'Klassik Red Velvet biskviti, maskarpone pendirli krem və təbii təzə moruq.',
           price: 26,
@@ -272,6 +290,7 @@ async function loadProducts() {
         },
         {
           id: 'cake-3',
+          code: 'SB-103',
           name: 'Vanil Ətirli Bento Zəriflik',
           description: 'Fərdi miniatür ad günü tortu, vanilli yüngül muss və giləmeyvələr.',
           price: 18,
@@ -281,6 +300,7 @@ async function loadProducts() {
         },
         {
           id: 'cake-4',
+          code: 'SB-104',
           name: 'Pastel Gül Ləçəkli Toy Tortu',
           description: '2 mərtəbəli, təbii qızılı vərəq və canlı pastel güllərlə bəzədilmiş xüsusi gün şedevri.',
           price: 32,
@@ -290,6 +310,7 @@ async function loadProducts() {
         },
         {
           id: 'cake-5',
+          code: 'SB-105',
           name: 'Çəhrayı Kremli Zərif Dizayn',
           description: 'Zərif çəhrayı krem qatları, moruq konfiti və xırtıldayan ağ şokolad layları.',
           price: 25,
@@ -299,6 +320,7 @@ async function loadProducts() {
         },
         {
           id: 'cake-6',
+          code: 'SB-106',
           name: 'Fındıqlı Şokolad & Truffel',
           description: 'Qovrulmuş meşə fındığı, duzlu karamel qatı və xalis qara şokoladlı muss.',
           price: 28,
@@ -308,6 +330,7 @@ async function loadProducts() {
         },
         {
           id: 'cake-7',
+          code: 'SB-107',
           name: 'Kraliça Zümrüd Nişan Tortu',
           description: 'Zərif məxmər teksturalı, mirvari bəzəklər və fərdi xəttatlıq yazısı ilə bəzədilmiş nişan tortu.',
           price: 35,
@@ -317,6 +340,7 @@ async function loadProducts() {
         },
         {
           id: 'cake-8',
+          code: 'SB-108',
           name: 'Fərdi Tematik Uşaq Tortu',
           description: 'Uşaq ad günləri üçün sevimli personajlar, zərərsiz təbii rənglər və meyvəli biskvit.',
           price: 22,
@@ -331,6 +355,7 @@ async function loadProducts() {
         const cat = categoriesList.find(c => c.id === data.categoryId);
         return {
           id: doc.id,
+          code: data.code ? String(data.code).trim().toUpperCase() : getProductCode({ id: doc.id, name: data.name }),
           ...data,
           categoryName: cat ? cat.name : 'Tort'
         };
@@ -383,6 +408,7 @@ function renderProducts() {
 
   filtered.forEach((prod, index) => {
     const isFav = wishlist.some(item => item.id === prod.id);
+    const prodCode = prod.code || getProductCode(prod);
     const card = document.createElement('div');
     card.className = 'product-card';
 
@@ -395,6 +421,9 @@ function renderProducts() {
         </button>
       </div>
       <div class="card-content">
+        <div class="card-meta-line">
+          <span class="card-code-pill"><i class="fa-solid fa-barcode"></i> Kod: ${prodCode}</span>
+        </div>
         <h3 onclick="openProductDetail('${prod.id}')">${prod.name}</h3>
         <p onclick="openProductDetail('${prod.id}')">${prod.description}</p>
         <div class="card-footer-row">
@@ -424,8 +453,13 @@ window.openProductDetail = function(productId) {
   selectedDetailProduct = prod;
   currentDetailQty = 1;
 
+  const prodCode = prod.code || getProductCode(prod);
+
   document.getElementById('detailImg').src = prod.imageUrl;
   document.getElementById('detailCat').textContent = prod.categoryName || 'Eksklüziv';
+  const codeEl = document.getElementById('detailCode');
+  if (codeEl) codeEl.textContent = `Kod: ${prodCode}`;
+
   document.getElementById('detailName').textContent = prod.name;
   document.getElementById('detailPrice').textContent = `Kiloqramı: ${prod.price} AZN`;
   document.getElementById('detailDesc').textContent = prod.description;
@@ -441,6 +475,9 @@ window.openProductDetail = function(productId) {
     favBtn.innerHTML = `<i class="${updatedFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}" style="${updatedFav ? 'color:#E63946;' : ''}"></i>`;
   };
 
+  // WhatsApp birbaşa sifariş düyməsi yenilənməsi
+  updateModalWhatsAppBtn();
+
   // Səbətə əlavə et düyməsi
   const addBtn = document.getElementById('modalAddToCartBtn');
   addBtn.onclick = () => {
@@ -451,6 +488,22 @@ window.openProductDetail = function(productId) {
   document.getElementById('productDetailModal').classList.add('active');
 };
 
+function updateModalWhatsAppBtn() {
+  const waBtn = document.getElementById('modalDirectWaBtn');
+  if (!waBtn || !selectedDetailProduct) return;
+  const prod = selectedDetailProduct;
+  const prodCode = prod.code || getProductCode(prod);
+  const itemTotal = +(prod.price * currentDetailQty).toFixed(1);
+  const msg = `Salam Sweet Bakery! ${prodCode} kodlu "${prod.name}" tortunu sifariş etmək istəyirəm:%0A%0A` +
+    `🍰 *Məhsul:* ${encodeURIComponent(prod.name)}%0A` +
+    `🏷️ *Məhsul Kodu:* ${encodeURIComponent(prodCode)}%0A` +
+    `⚖️ *Çəki:* ${currentDetailQty} kq%0A` +
+    `💰 *Məbləğ:* ${itemTotal} AZN%0A` +
+    `📍 *Çatdırılma:* Naxçıvan (Yalnız Bolt ilə)%0A%0A` +
+    `Zəhmət olmasa sifarişi qəbul edəsiniz.`;
+  waBtn.href = `https://wa.me/994703676561?text=${msg}`;
+}
+
 window.closeProductModal = function() {
   const modal = document.getElementById('productDetailModal');
   if (modal) modal.classList.remove('active');
@@ -459,6 +512,7 @@ window.closeProductModal = function() {
 window.changeDetailQty = function(delta) {
   currentDetailQty = Math.max(0.5, +(currentDetailQty + delta).toFixed(1));
   document.getElementById('detailQty').textContent = `${currentDetailQty} kq`;
+  updateModalWhatsAppBtn();
 };
 
 // ----------------------------------------------------
@@ -497,12 +551,15 @@ window.addToCart = function(productId, qty = 1) {
   const prod = productsList.find(p => p.id === productId);
   if (!prod) return;
 
+  const prodCode = prod.code || getProductCode(prod);
   const existing = cart.find(item => item.id === prod.id);
   if (existing) {
     existing.qty = +(existing.qty + qty).toFixed(1);
+    if (!existing.code) existing.code = prodCode;
   } else {
     cart.push({
       id: prod.id,
+      code: prodCode,
       name: prod.name,
       price: prod.price,
       imageUrl: prod.imageUrl,
@@ -512,7 +569,7 @@ window.addToCart = function(productId, qty = 1) {
 
   saveCart();
   updateBadgeCounts();
-  showToast(`"${prod.name}" (${qty} kq) səbətə əlavə edildi!`);
+  showToast(`"${prod.name}" [${prodCode}] (${qty} kq) səbətə əlavə edildi!`);
   openCartDrawer();
 };
 
@@ -567,16 +624,21 @@ function renderCartDrawer() {
   let orderSummaryText = 'Salam Sweet Bakery! Səbətimdəki tortları sifariş vermək istəyirəm:%0A%0A';
 
   cart.forEach(item => {
+    const itemCode = item.code || getProductCode(item);
+    item.code = itemCode;
     const itemTotal = +(item.price * item.qty).toFixed(1);
     subtotal += itemTotal;
-    orderSummaryText += `🍰 *${item.name}* — ${item.qty} kq (${itemTotal} AZN)%0A`;
+    orderSummaryText += `🍰 *${item.name}* [Kod: ${itemCode}] — ${item.qty} kq (${itemTotal} AZN)%0A`;
 
     const row = document.createElement('div');
     row.className = 'cart-item-row';
     row.innerHTML = `
       <img src="${item.imageUrl}" class="cart-item-img" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=100&q=80'" />
       <div class="cart-item-info">
-        <h4>${item.name}</h4>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.4rem; margin-bottom:0.2rem;">
+          <h4 style="margin:0;">${item.name}</h4>
+          <span class="cart-item-code-tag">${itemCode}</span>
+        </div>
         <div class="item-unit-price">${item.price} AZN / kq</div>
         <div class="cart-item-qty-ctrl">
           <button onclick="updateCartQty('${item.id}', -0.5)">-</button>
@@ -595,7 +657,7 @@ function renderCartDrawer() {
   });
 
   subtotal = subtotal.toFixed(1);
-  orderSummaryText += `%0A💰 *Ümumi Məbləğ:* ${subtotal} AZN%0AZəhmət olmasa sifarişi qəbul edəsiniz.`;
+  orderSummaryText += `%0A💰 *Ümumi Məbləğ:* ${subtotal} AZN%0A📍 *Çatdırılma:* Naxçıvan (Yalnız Bolt ilə)%0A%0AZəhmət olmasa sifarişi qəbul edəsiniz.`;
   totalEl.textContent = `${subtotal} AZN`;
   waBtn.href = `https://wa.me/994703676561?text=${orderSummaryText}`;
 }
@@ -609,6 +671,7 @@ window.toggleWishlist = function(productId, event) {
   const prod = productsList.find(p => p.id === productId);
   if (!prod) return;
 
+  const prodCode = prod.code || getProductCode(prod);
   const index = wishlist.findIndex(item => item.id === prod.id);
   if (index > -1) {
     wishlist.splice(index, 1);
@@ -616,12 +679,13 @@ window.toggleWishlist = function(productId, event) {
   } else {
     wishlist.push({
       id: prod.id,
+      code: prodCode,
       name: prod.name,
       price: prod.price,
       imageUrl: prod.imageUrl,
       categoryName: prod.categoryName
     });
-    showToast(`"${prod.name}" istək siyahısına əlavə edildi! ❤️`);
+    showToast(`"${prod.name}" [${prodCode}] istək siyahısına əlavə edildi! ❤️`);
   }
 
   localStorage.setItem('sweet_bakery_wishlist', JSON.stringify(wishlist));
@@ -655,12 +719,16 @@ function renderWishlistModal() {
 
   container.innerHTML = '';
   wishlist.forEach(item => {
+    const itemCode = item.code || getProductCode(item);
     const row = document.createElement('div');
     row.className = 'cart-item-row';
     row.innerHTML = `
       <img src="${item.imageUrl}" class="cart-item-img" />
       <div class="cart-item-info">
-        <h4>${item.name}</h4>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:0.4rem; margin-bottom:0.2rem;">
+          <h4 style="margin:0;">${item.name}</h4>
+          <span class="cart-item-code-tag">${itemCode}</span>
+        </div>
         <div style="font-weight:700; color:var(--primary-burgundy);">${item.price} AZN / kq</div>
       </div>
       <div style="display:flex; gap:0.6rem; align-items:center;">
