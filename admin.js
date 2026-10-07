@@ -409,7 +409,7 @@ function resetSelectedImage() {
 }
 
 // Canvas ilə şəkli sıxmaq (Keyfiyyəti qoruyaraq yüngülləşdirir, şəffaf PNG-lərin arxasını ağ edir)
-function compressImageFile(file, maxDimension = 850, quality = 0.82) {
+function compressImageFile(file, maxDimension = 1200, quality = 0.86) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (readerEvent) => {

@@ -372,7 +372,7 @@ function renderProducts() {
 // 2. MƏHSULA TAM ŞƏKİLDƏ BAXIŞ (QUICK VIEW MODAL) & PAYLAŞMA
 // ----------------------------------------------------
 window.openProductDetail = function(productId) {
-  const prod = productsList.find(p => p.id === productId);
+  const prod = productsList.find(p => p.id === productId || (p.code && p.code.toLowerCase() === String(productId).toLowerCase()));
   if (!prod) return;
 
   selectedDetailProduct = prod;
@@ -381,6 +381,11 @@ window.openProductDetail = function(productId) {
   const prodCode = prod.code || getProductCode(prod);
 
   document.getElementById('detailImg').src = prod.imageUrl;
+  const backdropEl = document.getElementById('detailImgBackdrop');
+  if (backdropEl) {
+    backdropEl.style.backgroundImage = `url("${prod.imageUrl}")`;
+  }
+
   document.getElementById('detailCat').textContent = prod.categoryName || 'Eksklüziv';
   const codeEl = document.getElementById('detailCode');
   if (codeEl) codeEl.textContent = `Kod: ${prodCode}`;
@@ -411,6 +416,22 @@ window.openProductDetail = function(productId) {
   };
 
   document.getElementById('productDetailModal').classList.add('active');
+};
+
+// Tam Ekran Şəkil Baxışı (Lightbox)
+window.openImageLightbox = function() {
+  const detailImg = document.getElementById('detailImg');
+  const lbImg = document.getElementById('lightboxImg');
+  const lbModal = document.getElementById('imageLightboxModal');
+  if (detailImg && lbImg && lbModal && detailImg.src) {
+    lbImg.src = detailImg.src;
+    lbModal.classList.add('active');
+  }
+};
+
+window.closeImageLightbox = function() {
+  const lbModal = document.getElementById('imageLightboxModal');
+  if (lbModal) lbModal.classList.remove('active');
 };
 
 function updateModalWhatsAppBtn() {

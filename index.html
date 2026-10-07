@@ -493,8 +493,12 @@
         <i class="fa-solid fa-xmark"></i>
       </button>
 
-      <div class="quickview-media">
+      <div class="quickview-media" onclick="openImageLightbox()" title="Tam ölçüdə baxmaq üçün toxunun">
+        <div class="quickview-media-backdrop" id="detailImgBackdrop"></div>
         <img id="detailImg" src="" alt="Tort Şəkli" />
+        <button type="button" class="quickview-zoom-hint" aria-label="Böyüt">
+          <i class="fa-solid fa-expand"></i>
+        </button>
       </div>
 
       <div class="quickview-content">
@@ -704,6 +708,18 @@
           <i class="fa-regular fa-copy"></i> Kopyala
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       6. TAM EKRAN ŞƏKİL BAXIŞI (IMAGE LIGHTBOX)
+       ========================================================================== -->
+  <div id="imageLightboxModal" class="modal-backdrop" onclick="closeImageLightbox()">
+    <div class="lightbox-content-box" onclick="event.stopPropagation()">
+      <button class="lightbox-close-btn" onclick="closeImageLightbox()" aria-label="Bağla">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+      <img id="lightboxImg" src="" alt="Tort Tam Ölçü" />
     </div>
   </div>
 
