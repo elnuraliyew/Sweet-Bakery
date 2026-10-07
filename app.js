@@ -205,8 +205,8 @@ async function loadProducts() {
       productsList = [
         {
           id: 'cake-1',
-          name: 'Belçika Şokoladlı Klassik',
-          description: 'Həqiqi Belçika südlü şokoladı, qozlu biskvit və zərif qanaş kremi.',
+          name: 'Klassik Şokoladlı Zəriflik',
+          description: 'Zərif südlü şokolad, qozlu biskvit və krem qanaş.',
           price: 24,
           imageUrl: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80',
           categoryId: chocCat.id,
@@ -224,9 +224,9 @@ async function loadProducts() {
         {
           id: 'cake-3',
           name: 'Vanil Ətirli Bento Zəriflik',
-          description: 'Fərdi miniatür ad günü tortu, Madagascar vanili ilə yüngül muss və giləmeyvələr.',
+          description: 'Fərdi miniatür ad günü tortu, vanilli yüngül muss və giləmeyvələr.',
           price: 18,
-          imageUrl: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?auto=format&fit=crop&w=800&q=80',
+          imageUrl: 'https://images.unsplash.com/photo-1588195538326-c5b1e9f80a1b?auto=format&fit=crop&w=800&q=80',
           categoryId: bdayCat.id,
           categoryName: bdayCat.name
         },
