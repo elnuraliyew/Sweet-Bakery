@@ -522,6 +522,9 @@
           <a id="modalDirectWaBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn-modal-wa" title="WhatsApp ilə birbaşa sifariş et">
             <i class="fa-brands fa-whatsapp"></i> Sifariş Et
           </a>
+          <button id="modalShareBtn" class="icon-action-btn" title="Məhsulu Paylaş" aria-label="Paylaş" onclick="shareCurrentModalProduct()">
+            <i class="fa-solid fa-share-nodes"></i>
+          </button>
           <button id="modalFavBtn" class="icon-action-btn" title="İstək siyahısına at" aria-label="Sevimlilər">
             <i class="fa-regular fa-heart"></i>
           </button>
@@ -646,6 +649,61 @@
       </div>
 
       <div id="authStatusMsg" style="margin-top: 1rem; font-size: 0.88rem; min-height: 20px;"></div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       5. MƏHSULU PAYLAŞ MODAL PƏNCƏRƏSİ (PRODUCT SHARE MODAL)
+       ========================================================================== -->
+  <div id="shareModal" class="modal-backdrop">
+    <div class="share-modal-box">
+      <button class="modal-close-btn" onclick="closeShareModal()" aria-label="Bağla">
+        <i class="fa-solid fa-xmark"></i>
+      </button>
+
+      <div class="share-modal-header">
+        <div class="share-icon-circle">
+          <i class="fa-solid fa-share-nodes"></i>
+        </div>
+        <h3>Məhsulu Paylaş</h3>
+        <p>Zərif tortumuzu yaxınlarınız və dostlarınızla bölüşün</p>
+      </div>
+
+      <!-- Məhsulun kiçik kartı -->
+      <div class="share-prod-preview">
+        <img id="shareProdImg" src="" alt="Tort" />
+        <div class="share-prod-info">
+          <h4 id="shareProdName">Tort Adı</h4>
+          <div class="share-prod-meta">
+            <span id="shareProdCode" class="cart-item-code-tag">SB-101</span>
+            <span id="shareProdPrice" style="font-weight: 700; color: var(--primary-burgundy);">25 AZN / kq</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paylaşma kanalları -->
+      <div class="share-channels-grid">
+        <a id="shareWaLink" href="#" target="_blank" rel="noopener noreferrer" class="share-channel-btn share-btn-wa">
+          <i class="fa-brands fa-whatsapp"></i>
+          <span>WhatsApp</span>
+        </a>
+        <a id="shareTgLink" href="#" target="_blank" rel="noopener noreferrer" class="share-channel-btn share-btn-tg">
+          <i class="fa-brands fa-telegram"></i>
+          <span>Telegram</span>
+        </a>
+        <a id="shareFbLink" href="#" target="_blank" rel="noopener noreferrer" class="share-channel-btn share-btn-fb">
+          <i class="fa-brands fa-facebook"></i>
+          <span>Facebook</span>
+        </a>
+      </div>
+
+      <!-- Link kopyalama sahəsi -->
+      <div class="share-copy-box">
+        <input type="text" id="shareUrlInput" readonly value="" />
+        <button type="button" id="copyShareUrlBtn" onclick="copyShareUrl()">
+          <i class="fa-regular fa-copy"></i> Kopyala
+        </button>
+      </div>
     </div>
   </div>
 

@@ -124,17 +124,37 @@ function setupEventListeners() {
     prodForm.addEventListener('submit', handleProductSubmit);
   }
 
-  // Şəkil faylı seçildikdə (Cihaz yaddaşından)
+  // Dropzone və Şəkil Seçimi İdarəetməsi (Klik, Drag & Drop, Cihaz Seçimi)
   const fileInput = document.getElementById('prodFileInput');
+  const dropzone = document.getElementById('uploadDropzone');
+
+  if (dropzone && fileInput) {
+    dropzone.addEventListener('click', (e) => {
+      if (e.target !== fileInput) {
+        fileInput.click();
+      }
+    });
+
+    dropzone.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        fileInput.click();
+      }
+    });
+  }
+
   if (fileInput) {
+    fileInput.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
     fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
+      const file = e.target.files && e.target.files[0];
       if (file) processImageFile(file);
     });
   }
 
   // Drag & Drop Dəstəyi
-  const dropzone = document.getElementById('uploadDropzone');
   if (dropzone) {
     ['dragenter', 'dragover'].forEach(eventName => {
       dropzone.addEventListener(eventName, (e) => {
@@ -159,6 +179,28 @@ function setupEventListeners() {
       }
     });
   }
+
+  // Clipboard Paste Dəstəyi (Ctrl+V ilə şəkil yapışdırmaq)
+  window.addEventListener('paste', (e) => {
+    const activeTab = document.getElementById('productsTab');
+    if (!activeTab || activeTab.style.display === 'none') return;
+    const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+    if (items) {
+      for (const item of items) {
+        if (item.type && item.type.indexOf('image') !== -1) {
+          const blob = item.getAsFile();
+          if (blob) {
+            notify('Kopyalanmış şəkil aşkar edildi və yüklənir...');
+            processImageFile(blob);
+            break;
+          }
+        }
+      }
+    }
+  });
+
+  // İnternet Şəkil Linki (URL) İdarəetməsi
+  setupDirectUrlHandler();
 
   // Şəkli ləğv et / dəyiş düyməsi
   const removeImgBtn = document.getElementById('removeImgBtn');
@@ -185,31 +227,86 @@ function setupEventListeners() {
   }
 }
 
+// Şəkil URL Girişi Funksionallığı
+function setupDirectUrlHandler() {
+  const toggleBtn = document.getElementById('toggleUrlInputBtn');
+  const urlContainer = document.getElementById('urlInputContainer');
+  const applyBtn = document.getElementById('applyDirectUrlBtn');
+  const directUrlInput = document.getElementById('prodDirectUrlInput');
+  const hiddenInput = document.getElementById('prodImageUrl');
+  const previewContainer = document.getElementById('imagePreviewContainer');
+  const previewImg = document.getElementById('imagePreview');
+  const previewText = document.getElementById('imagePreviewText');
+  const dropzone = document.getElementById('uploadDropzone');
+
+  if (toggleBtn && urlContainer) {
+    toggleBtn.addEventListener('click', () => {
+      const isHidden = urlContainer.style.display === 'none';
+      urlContainer.style.display = isHidden ? 'block' : 'none';
+      if (isHidden && directUrlInput) directUrlInput.focus();
+    });
+  }
+
+  const applyUrl = () => {
+    const url = directUrlInput ? directUrlInput.value.trim() : '';
+    if (!url) {
+      notify('Zəhmət olmasa şəkil linkini daxil edin', true);
+      return;
+    }
+    notify('Şəkil linki yoxlanılır...');
+    const testImg = new Image();
+    testImg.onload = () => {
+      hiddenInput.value = url;
+      previewImg.src = url;
+      if (previewText) previewText.textContent = 'İnternet linkindən yükləndi';
+      if (dropzone) dropzone.style.display = 'none';
+      if (previewContainer) previewContainer.style.display = 'flex';
+      notify('Şəkil linki uğurla tətbiq edildi!');
+    };
+    testImg.onerror = () => {
+      notify('Daxil edilmiş linkdə şəkil tapılmadı və ya format dəstəklənmir.', true);
+    };
+    testImg.src = url;
+  };
+
+  if (applyBtn) applyBtn.addEventListener('click', applyUrl);
+  if (directUrlInput) {
+    directUrlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        applyUrl();
+      }
+    });
+  }
+}
+
 // Şəkli sıxıb emal edən ümumi funksiya
 async function processImageFile(file) {
-  if (!file.type.startsWith('image/')) {
+  if (!file || !file.type.startsWith('image/')) {
     notify('Zəhmət olmasa yalnız şəkil faylı seçin (PNG, JPG, WEBP)', true);
     return;
   }
 
+  const dropzone = document.getElementById('uploadDropzone');
   const previewContainer = document.getElementById('imagePreviewContainer');
   const previewImg = document.getElementById('imagePreview');
   const hiddenInput = document.getElementById('prodImageUrl');
   const previewText = document.getElementById('imagePreviewText');
 
   try {
-    notify('Şəkil cihazdan oxunur və optimallaşdırılır...');
-    const compressedDataUrl = await compressImageFile(file, 900, 0.85);
+    notify('Şəkil oxunur və optimallaşdırılır...');
+    const compressedDataUrl = await compressImageFile(file, 850, 0.82);
     hiddenInput.value = compressedDataUrl;
     previewImg.src = compressedDataUrl;
     if (previewText) {
       const sizeKb = Math.round((compressedDataUrl.length * 3 / 4) / 1024);
-      previewText.textContent = `${file.name} (~${sizeKb} KB)`;
+      previewText.textContent = `${file.name || 'Şəkil'} (~${sizeKb} KB)`;
     }
-    previewContainer.style.display = 'flex';
+    if (dropzone) dropzone.style.display = 'none';
+    if (previewContainer) previewContainer.style.display = 'flex';
     notify('Şəkil uğurla hazırlandı!');
   } catch (err) {
-    console.error(err);
+    console.error('Şəkil sıxma xətası:', err);
     notify('Şəkli emal edərkən xəta baş verdi', true);
   }
 }
@@ -217,14 +314,21 @@ async function processImageFile(file) {
 function resetSelectedImage() {
   const fileInput = document.getElementById('prodFileInput');
   const hiddenInput = document.getElementById('prodImageUrl');
+  const dropzone = document.getElementById('uploadDropzone');
   const previewContainer = document.getElementById('imagePreviewContainer');
+  const directUrlInput = document.getElementById('prodDirectUrlInput');
+  const urlContainer = document.getElementById('urlInputContainer');
+
   if (fileInput) fileInput.value = '';
   if (hiddenInput) hiddenInput.value = '';
+  if (directUrlInput) directUrlInput.value = '';
   if (previewContainer) previewContainer.style.display = 'none';
+  if (urlContainer) urlContainer.style.display = 'none';
+  if (dropzone) dropzone.style.display = 'block';
 }
 
-// Canvas ilə şəkli sıxmaq (Keyfiyyəti itirmədən yüngülləşdirir)
-function compressImageFile(file, maxDimension = 900, quality = 0.85) {
+// Canvas ilə şəkli sıxmaq (Keyfiyyəti qoruyaraq yüngülləşdirir, şəffaf PNG-lərin arxasını ağ edir)
+function compressImageFile(file, maxDimension = 850, quality = 0.82) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (readerEvent) => {
@@ -250,15 +354,18 @@ function compressImageFile(file, maxDimension = 900, quality = 0.85) {
         canvas.height = height;
 
         const ctx = canvas.getContext('2d');
+        // Şəffaf PNG-lərin arxa fonunu təmiz ağ edirik
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
         ctx.drawImage(img, 0, 0, width, height);
 
         const dataUrl = canvas.toDataURL('image/jpeg', quality);
         resolve(dataUrl);
       };
-      img.onerror = reject;
+      img.onerror = () => reject(new Error('Şəkil faylı oxuna bilmədi'));
       img.src = readerEvent.target.result;
     };
-    reader.onerror = reject;
+    reader.onerror = () => reject(new Error('Fayl oxuma xətası'));
     reader.readAsDataURL(file);
   });
 }
@@ -546,14 +653,22 @@ window.startEditProduct = function(id) {
   document.getElementById('prodDesc').value = prod.description;
 
   // Şəklin önizlənməsi
+  const dropzone = document.getElementById('uploadDropzone');
+  const previewContainer = document.getElementById('imagePreviewContainer');
+  const previewImg = document.getElementById('imagePreview');
+  const previewText = document.getElementById('imagePreviewText');
+  const urlContainer = document.getElementById('urlInputContainer');
+
   if (prod.imageUrl) {
-    const previewContainer = document.getElementById('imagePreviewContainer');
-    const previewImg = document.getElementById('imagePreview');
-    const previewText = document.getElementById('imagePreviewText');
     previewImg.src = prod.imageUrl;
     if (previewText) previewText.textContent = 'Mövcud şəkil saxlanıldı';
-    previewContainer.style.display = 'flex';
+    if (dropzone) dropzone.style.display = 'none';
+    if (previewContainer) previewContainer.style.display = 'flex';
+  } else {
+    if (dropzone) dropzone.style.display = 'block';
+    if (previewContainer) previewContainer.style.display = 'none';
   }
+  if (urlContainer) urlContainer.style.display = 'none';
 
   document.getElementById('productFormTitle').innerHTML = '<i class="fa-solid fa-pen-to-square"></i> Tortu Redaktə Et';
   document.getElementById('submitProdBtn').innerHTML = '<i class="fa-solid fa-check"></i> Yenilə';
@@ -568,7 +683,16 @@ function resetProductForm() {
   document.getElementById('productForm').reset();
   document.getElementById('prodCode').value = '';
   document.getElementById('prodImageUrl').value = '';
-  document.getElementById('imagePreviewContainer').style.display = 'none';
+  const fileInput = document.getElementById('prodFileInput');
+  if (fileInput) fileInput.value = '';
+  const directUrlInput = document.getElementById('prodDirectUrlInput');
+  if (directUrlInput) directUrlInput.value = '';
+  const dropzone = document.getElementById('uploadDropzone');
+  if (dropzone) dropzone.style.display = 'block';
+  const previewContainer = document.getElementById('imagePreviewContainer');
+  if (previewContainer) previewContainer.style.display = 'none';
+  const urlContainer = document.getElementById('urlInputContainer');
+  if (urlContainer) urlContainer.style.display = 'none';
   document.getElementById('productFormTitle').innerHTML = '<i class="fa-solid fa-circle-plus"></i> Yeni Tort Əlavə Et';
   document.getElementById('submitProdBtn').innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Yadda Saxla';
   document.getElementById('cancelProdEditBtn').style.display = 'none';

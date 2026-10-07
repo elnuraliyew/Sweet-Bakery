@@ -141,6 +141,7 @@ async function initApp() {
   await loadCategories();
   await loadProducts();
   await loadFlavors();
+  checkSharedCakeUrl();
 }
 
 async function loadCategories() {
@@ -411,13 +412,17 @@ function renderProducts() {
     const prodCode = prod.code || getProductCode(prod);
     const card = document.createElement('div');
     card.className = 'product-card';
+    card.dataset.id = prod.id;
 
     card.innerHTML = `
       <div class="card-image-box" onclick="openProductDetail('${prod.id}')">
         <img src="${prod.imageUrl}" alt="${prod.name}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=800&q=80'" />
         <span class="card-category-badge">${prod.categoryName || 'Eksklüziv'}</span>
-        <button class="card-fav-btn ${isFav ? 'active' : ''}" onclick="toggleWishlist('${prod.id}', event)" title="İstək siyahısına əlavə et">
+        <button class="card-fav-btn ${isFav ? 'active' : ''}" onclick="toggleWishlist('${prod.id}', event)" title="İstək siyahısına əlavə et" aria-label="Sevimlilər">
           <i class="${isFav ? 'fa-solid fa-heart' : 'fa-regular fa-heart'}"></i>
+        </button>
+        <button class="card-share-btn" onclick="shareProduct('${prod.id}', event)" title="Məhsulu Paylaş" aria-label="Paylaş">
+          <i class="fa-solid fa-share-nodes"></i>
         </button>
       </div>
       <div class="card-content">
@@ -444,7 +449,7 @@ function renderProducts() {
 }
 
 // ----------------------------------------------------
-// 2. MƏHSULA TAM ŞƏKİLDƏ BAXIŞ (QUICK VIEW MODAL)
+// 2. MƏHSULA TAM ŞƏKİLDƏ BAXIŞ (QUICK VIEW MODAL) & PAYLAŞMA
 // ----------------------------------------------------
 window.openProductDetail = function(productId) {
   const prod = productsList.find(p => p.id === productId);
@@ -516,6 +521,133 @@ window.changeDetailQty = function(delta) {
 };
 
 // ----------------------------------------------------
+// 2.1 MƏHSULU PAYLAŞMA MƏNTİQİ (NATIVE + MODAL + COPY)
+// ----------------------------------------------------
+window.shareProduct = function(productId, event) {
+  if (event) event.stopPropagation();
+
+  const prod = productsList.find(p => p.id === productId);
+  if (!prod) return;
+
+  const prodCode = prod.code || getProductCode(prod);
+  const shareUrl = `${window.location.origin}${window.location.pathname}?cake=${encodeURIComponent(prod.id)}`;
+  const shareTitle = `${prod.name} [${prodCode}] — Sweet Bakery`;
+  const shareText = `Sweet Bakery-də zərif "${prod.name}" (${prod.price} AZN / kq) tortuna bax! [Kod: ${prodCode}] 🎂✨`;
+
+  if (navigator.share) {
+    navigator.share({
+      title: shareTitle,
+      text: shareText,
+      url: shareUrl
+    }).catch(err => {
+      if (err.name !== 'AbortError') {
+        openShareModal(prod, shareUrl, shareText);
+      }
+    });
+  } else {
+    openShareModal(prod, shareUrl, shareText);
+  }
+};
+
+window.shareCurrentModalProduct = function() {
+  if (selectedDetailProduct) {
+    shareProduct(selectedDetailProduct.id);
+  }
+};
+
+function openShareModal(prod, shareUrl, shareText) {
+  const modal = document.getElementById('shareModal');
+  if (!modal) return;
+
+  const prodCode = prod.code || getProductCode(prod);
+  const imgEl = document.getElementById('shareProdImg');
+  const nameEl = document.getElementById('shareProdName');
+  const codeEl = document.getElementById('shareProdCode');
+  const priceEl = document.getElementById('shareProdPrice');
+  const inputEl = document.getElementById('shareUrlInput');
+
+  if (imgEl) imgEl.src = prod.imageUrl;
+  if (nameEl) nameEl.textContent = prod.name;
+  if (codeEl) codeEl.textContent = `Kod: ${prodCode}`;
+  if (priceEl) priceEl.textContent = `${prod.price} AZN / kq`;
+  if (inputEl) inputEl.value = shareUrl;
+
+  // WhatsApp Paylaşma
+  const waLink = document.getElementById('shareWaLink');
+  if (waLink) {
+    waLink.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + '\n' + shareUrl)}`;
+  }
+
+  // Telegram Paylaşma
+  const tgLink = document.getElementById('shareTgLink');
+  if (tgLink) {
+    tgLink.href = `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareText)}`;
+  }
+
+  // Facebook Paylaşma
+  const fbLink = document.getElementById('shareFbLink');
+  if (fbLink) {
+    fbLink.href = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`;
+  }
+
+  modal.classList.add('active');
+}
+
+window.closeShareModal = function() {
+  const modal = document.getElementById('shareModal');
+  if (modal) modal.classList.remove('active');
+};
+
+window.copyShareUrl = function() {
+  const input = document.getElementById('shareUrlInput');
+  const btn = document.getElementById('copyShareUrlBtn');
+  if (!input) return;
+
+  input.select();
+  input.setSelectionRange(0, 99999);
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(input.value).then(() => {
+      showCopySuccess(btn);
+    }).catch(() => {
+      document.execCommand('copy');
+      showCopySuccess(btn);
+    });
+  } else {
+    document.execCommand('copy');
+    showCopySuccess(btn);
+  }
+};
+
+function showCopySuccess(btn) {
+  if (btn) {
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Kopyalandı!';
+    setTimeout(() => {
+      btn.innerHTML = '<i class="fa-regular fa-copy"></i> Kopyala';
+    }, 2500);
+  }
+  showToast('Tortun linki kopyalandı! Yaxınlarınızla bölüşə bilərsiniz.');
+}
+
+// URL-dən paylaşılan tortu avtomatik açmaq (Deep-link)
+function checkSharedCakeUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const cakeId = params.get('cake');
+  if (cakeId) {
+    setTimeout(() => {
+      openProductDetail(cakeId);
+      const targetCard = document.querySelector(`.product-card[data-id="${cakeId}"]`);
+      if (targetCard) {
+        targetCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        const catSection = document.getElementById('catalogue');
+        if (catSection) catSection.scrollIntoView({ behavior: 'smooth' });
+      }
+    }, 450);
+  }
+}
+
+// ----------------------------------------------------
 // 3. SƏBƏT (CART) İDARƏETMƏSİ
 // ----------------------------------------------------
 function initCartAndWishlistUI() {
@@ -534,6 +666,13 @@ function initCartAndWishlistUI() {
   if (wishlistModal) {
     wishlistModal.addEventListener('click', (e) => {
       if (e.target === wishlistModal) closeWishlistModal();
+    });
+  }
+
+  const shareModal = document.getElementById('shareModal');
+  if (shareModal) {
+    shareModal.addEventListener('click', (e) => {
+      if (e.target === shareModal) closeShareModal();
     });
   }
 }

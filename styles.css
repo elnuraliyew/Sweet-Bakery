@@ -1000,6 +1000,32 @@ img {
   animation: heartPop 0.3s ease;
 }
 
+.card-share-btn {
+  position: absolute;
+  top: 3.4rem;
+  right: 0.9rem;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(6px);
+  border: 1px solid var(--border-warm);
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition);
+  z-index: 5;
+}
+
+.card-share-btn:hover {
+  transform: scale(1.15);
+  color: var(--primary-burgundy);
+  background: var(--white);
+}
+
 @keyframes heartPop {
   0% { transform: scale(1); }
   50% { transform: scale(1.3); }
@@ -1969,6 +1995,192 @@ img {
 
 .auth-form-panel.active {
   display: block;
+}
+
+/* 5. Məhsul Paylaşma (Share) Modalı */
+.share-modal-box {
+  background: var(--white);
+  width: 100%;
+  max-width: 480px;
+  border-radius: 26px;
+  padding: 2.4rem 2rem;
+  box-shadow: 0 25px 60px rgba(48, 33, 31, 0.25);
+  position: relative;
+  text-align: center;
+  border: 1px solid var(--border-warm);
+  transform: translateY(20px) scale(0.96);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.modal-backdrop.active .share-modal-box {
+  transform: translateY(0) scale(1);
+}
+
+.share-modal-header {
+  margin-bottom: 1.4rem;
+}
+
+.share-icon-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--soft-pink);
+  color: var(--primary-burgundy);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin: 0 auto 0.9rem;
+  border: 1px solid var(--border-warm);
+}
+
+.share-modal-header h3 {
+  font-family: var(--font-serif);
+  font-size: 1.45rem;
+  color: var(--text-dark);
+  margin-bottom: 0.35rem;
+}
+
+.share-modal-header p {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+}
+
+.share-prod-preview {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg-cream);
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  border: 1px solid var(--border-warm);
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.share-prod-preview img {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid var(--border-warm);
+}
+
+.share-prod-info h4 {
+  font-size: 0.95rem;
+  color: var(--text-dark);
+  margin-bottom: 0.3rem;
+}
+
+.share-prod-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+}
+
+.share-channels-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.8rem;
+  margin-bottom: 1.5rem;
+}
+
+.share-channel-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.9rem 0.6rem;
+  border-radius: 14px;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition: var(--transition);
+  border: 1px solid var(--border-warm);
+}
+
+.share-channel-btn i {
+  font-size: 1.4rem;
+}
+
+.share-btn-wa {
+  background: #E8F8EE;
+  color: #128C7E !important;
+  border-color: #C1E8CD;
+}
+.share-btn-wa:hover {
+  background: #25D366;
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.3);
+}
+
+.share-btn-tg {
+  background: #E6F3FB;
+  color: #0088CC !important;
+  border-color: #BBE1F7;
+}
+.share-btn-tg:hover {
+  background: #0088CC;
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 136, 204, 0.3);
+}
+
+.share-btn-fb {
+  background: #EBF1FB;
+  color: #1877F2 !important;
+  border-color: #C6DBFA;
+}
+.share-btn-fb:hover {
+  background: #1877F2;
+  color: #fff !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(24, 119, 242, 0.3);
+}
+
+.share-copy-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-cream);
+  padding: 0.35rem 0.4rem 0.35rem 0.9rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--border-warm);
+}
+
+.share-copy-box input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.85rem;
+  color: var(--text-dark);
+  font-family: var(--font-sans);
+  outline: none;
+  min-width: 0;
+}
+
+.share-copy-box button {
+  background: var(--primary-burgundy);
+  color: var(--white);
+  border: none;
+  padding: 0.55rem 1.15rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+}
+
+.share-copy-box button:hover {
+  background: var(--burgundy-hover);
+  transform: translateY(-1px);
 }
 
 /* ==========================================================================

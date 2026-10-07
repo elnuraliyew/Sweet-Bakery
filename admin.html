@@ -224,18 +224,33 @@
                 </select>
               </div>
 
-              <!-- Şəkil Yükləmə Zolağı (Drag & Drop + Cihaz Yaddaşı) -->
+              <!-- Şəkil Yükləmə Zolağı (Drag & Drop + Cihaz Yaddaşı + URL) -->
               <div class="form-group full-width">
-                <label><i class="fa-solid fa-image"></i> Tortun Şəkli (Cihaz yaddaşından seçin və ya sürükləyin)</label>
+                <label><i class="fa-solid fa-image"></i> Tortun Şəkli (Cihaz yaddaşından seçin, link qoyun və ya yapışdırın)</label>
                 
-                <div class="upload-dropzone" id="uploadDropzone">
+                <div class="upload-dropzone" id="uploadDropzone" role="button" tabindex="0">
                   <div class="upload-dropzone-icon">
                     <i class="fa-solid fa-cloud-arrow-up"></i>
                   </div>
                   <div class="upload-dropzone-title">Şəkil seçmək üçün klikləyin və ya faylı bura atın</div>
-                  <div class="upload-dropzone-desc">JPG, PNG, WEBP — Cihaz yaddaşından birbaşa yüklənir və avtomatik sıxılır</div>
-                  <input type="file" id="prodFileInput" accept="image/*" style="display: none;" />
-                  <input type="hidden" id="prodImageUrl" value="" />
+                  <div class="upload-dropzone-desc">JPG, PNG, WEBP — Cihazdan birbaşa seçilir, sürüklənir və ya paneldən yapışdırılır (Ctrl+V)</div>
+                </div>
+                <input type="file" id="prodFileInput" accept="image/*" style="display: none;" />
+                <input type="hidden" id="prodImageUrl" value="" />
+
+                <!-- İnternet linki (URL) ilə şəkil qoymaq seçimi -->
+                <div class="img-url-toggle-bar" style="margin-top: 0.6rem;">
+                  <button type="button" class="btn-text-url-toggle" id="toggleUrlInputBtn" style="background:none; border:none; color:var(--primary-burgundy); font-weight:600; font-size:0.85rem; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; padding:0.2rem 0;">
+                    <i class="fa-solid fa-link"></i> Və ya internetdən birbaşa şəkil linki (URL) ilə daxil edin
+                  </button>
+                  <div id="urlInputContainer" style="display: none; margin-top: 0.6rem;">
+                    <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
+                      <input type="url" id="prodDirectUrlInput" placeholder="Məs: https://images.unsplash.com/... və ya birbaşa şəkil linki" style="flex: 1; min-width: 240px; padding: 0.65rem 0.9rem; border-radius: 10px; border: 1.5px solid var(--border-warm);" />
+                      <button type="button" id="applyDirectUrlBtn" class="btn-admin-secondary" style="padding: 0.65rem 1.2rem;">
+                        <i class="fa-solid fa-check"></i> Şəkli Tətbiq Et
+                      </button>
+                    </div>
+                  </div>
                 </div>
 
                 <!-- Seçilmiş Şəkil Önizləməsi -->
